@@ -1,7 +1,7 @@
 package com.haejung.snapmark.presentation.intro
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import com.haejung.snapmark.R
 import com.haejung.snapmark.extend.moveToActivity
 import com.haejung.snapmark.presentation.main.MainActivity
@@ -24,7 +24,7 @@ class IntroActivity : AppCompatActivity() {
         super.onResume()
         disposable.add(Completable.complete()
             .delay(1, TimeUnit.SECONDS)
-            .subscribe{
+            .subscribe {
                 moveToActivity(MainActivity::class.java)
             }
         )
