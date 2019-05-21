@@ -1,11 +1,11 @@
 package com.haejung.snapmark.data
 
-private val fakeImageThumbnail = byteArrayOf(0, 0)
-private val fakeImage = byteArrayOf(0, 0, 0, 0)
+import android.graphics.Bitmap
+import android.graphics.Matrix
 
-private val fakePosition = byteArrayOf(0, 0, 0, 0)
-private val fakeScale = byteArrayOf(0, 0, 0, 0)
-private val fakeRotation = byteArrayOf(0, 0, 0, 0)
+private val fakeImageThumbnail = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888)
+private val fakeImage = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888)
+private val fakeMatrix = Matrix()
 
 fun createMark(name: String) =
     Mark(fakeImageThumbnail, fakeImage, name)
@@ -23,16 +23,9 @@ fun createMarkList(prefixName: String, size: Int = 1): List<Mark> =
         }
     }
 
-fun createMarkMatrix() =
-    MarkMatrix(
-        fakePosition,
-        fakeScale,
-        fakeRotation
-    )
-
 fun createMarkPresetWithMark(name: String, mark: Mark?) =
     MarkPreset(
-        createMarkMatrix(),
+        fakeMatrix,
         mark?.id,
         name
     )

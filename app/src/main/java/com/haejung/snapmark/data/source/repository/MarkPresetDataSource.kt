@@ -1,4 +1,4 @@
-package com.haejung.snapmark.data.source
+package com.haejung.snapmark.data.source.repository
 
 import com.haejung.snapmark.data.MarkPreset
 import io.reactivex.Completable
@@ -15,7 +15,7 @@ interface MarkPresetDataSource {
 
     fun getMarkPresetsByMarkName(markName: String): Flowable<List<MarkPreset>>
 
-    fun insertAll(vararg markPresets: MarkPreset): Single<Int>
+    fun insertAll(vararg markPresets: MarkPreset): Completable
 
     fun update(markPreset: MarkPreset): Completable
 

@@ -5,7 +5,7 @@ buildscript {
     repositories {
         google()
         jcenter()
-        
+
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.4.1'
@@ -19,7 +19,7 @@ allprojects {
     repositories {
         google()
         jcenter()
-        
+
     }
 }
 
@@ -34,28 +34,37 @@ ext {
     targetSdkVersion = 28
     compileSdkVersion = 28
 
-    // App dependencies
+    // KotlinX
     androidXVersion = '1.0.0'
     androidXTestVersion = '1.1.1'
     androidXAnnotations = '1.0.1'
     androidXLegacySupport = '1.0.0'
-    materialVersion = '1.1.0-alpha06'
+
+    // Support
+    appCompatVersion = '1.1.0-alpha05'
     cardVersion = '1.0.0'
     recyclerViewVersion = '1.1.0-alpha05'
-    appCompatVersion = '1.1.0-alpha05'
     constrainsLayoutVersion = '2.0.0-beta1'
+    roomVersion = '2.1.0-beta01'
+    materialVersion = '1.1.0-alpha06'
 
+    // Testing
+    testCoreVersion = '1.1.0'
     junitVersion = '1.0.0'
     rulesVersion = '1.2.0-beta01'
     runnerVersion = '1.2.0-beta01'
     espressoVersion = '3.2.0-beta01'
     mockitoVersion = '2.8.9'
 
+    // Arch
+    coreArchVersion = '2.0.1'
+
+    // External
     timberVersion = '4.7.1'
     glideVersion = '4.9.0'
     retrofitVersion = '2.5.0'
-    roomVersion = '2.1.0-beta01'
 
+    // Reactive
     rxJavaVersion = '2.2.8'
     rxKotlinVersion = '2.3.0'
     rxAndroidVersion = '2.1.1'

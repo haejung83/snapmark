@@ -1,4 +1,4 @@
-package com.haejung.snapmark.data.source
+package com.haejung.snapmark.data.source.repository
 
 import com.haejung.snapmark.data.Mark
 import io.reactivex.Completable
@@ -11,7 +11,7 @@ interface MarkDataSource {
 
     fun getMarkById(): Flowable<Mark>
 
-    fun insertAll(vararg marks: Mark): Single<Int>
+    fun insertAll(vararg marks: Mark): Completable
 
     fun update(mark: Mark): Completable
 
