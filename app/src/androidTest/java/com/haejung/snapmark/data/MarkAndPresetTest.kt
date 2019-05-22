@@ -1,34 +1,35 @@
 package com.haejung.snapmark.data
 
 import android.content.Context
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.MediumTest
 import com.haejung.snapmark.data.source.local.MarkDao
 import com.haejung.snapmark.data.source.local.MarkDatabase
 import com.haejung.snapmark.data.source.local.MarkPresetDao
-import org.hamcrest.core.IsEqual.equalTo
 import org.junit.After
-import org.junit.Assert.assertThat
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.IOException
 
 @RunWith(AndroidJUnit4::class)
-@MediumTest
 class MarkAndPresetTest {
     private lateinit var markDao: MarkDao
     private lateinit var markPresetDao: MarkPresetDao
     private lateinit var db: MarkDatabase
+
+    @get:Rule
+    var instantTaskExecutorRule = InstantTaskExecutorRule()
 
     @Before
     fun createDb() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         db = Room.inMemoryDatabaseBuilder(
             context, MarkDatabase::class.java
-        ).build()
+        ).allowMainThreadQueries().build()
         markDao = db.markDao()
         markPresetDao = db.markPresetDao()
     }
@@ -44,10 +45,17 @@ class MarkAndPresetTest {
     fun writeMarkAndReadInList() {
         val markSize = 2
         val mark = createMarkList("test", markSize)
-        markDao.insertAll(*mark.toTypedArray())
-        val byAll = markDao.getAll()
+        val insertMark = markDao.insertAll(*mark.toTypedArray())
+        insertMark.test()
+            .assertSubscribed()
+            .assertComplete()
 
-        assertThat(byAll.size, equalTo(markSize))
+        val foundMark = markDao.getAll()
+        foundMark.test()
+            .assertSubscribed()
+            .assertValue {
+                it.size == markSize
+            }
     }
 
     @Test
@@ -55,10 +63,17 @@ class MarkAndPresetTest {
     fun writeMarkPresetAndRead() {
         val name = "testPreset"
         val preset = createMarkPresetWithMark(name, null)
-        markPresetDao.insertAll(preset)
-        val foundPreset = markPresetDao.getByName(name)
+        var insertPreset = markPresetDao.insertAll(preset)
+        insertPreset.test()
+            .assertSubscribed()
+            .assertComplete()
 
-        assertThat(foundPreset.name, equalTo(name))
+        val foundPreset = markPresetDao.getByName(name)
+        foundPreset.test()
+            .assertSubscribed()
+            .assertValue {
+                it.name == name
+            }
     }
 
     @Test
@@ -66,14 +81,32 @@ class MarkAndPresetTest {
     fun writeCombineMarkAndPreset() {
         val markName = "test"
         val markPresetName = "testPreset"
-        markDao.insertAll(createMark(markName))
+        val insertMark = markDao.insertAll(createMark(markName))
+        insertMark.test()
+            .assertSubscribed()
+            .assertComplete()
+
         val foundMark = markDao.getByName(markName)
+        val foundMarkTest = foundMark.test()
+        foundMarkTest
+            .assertSubscribed()
+            .assertValue {
+                it.name == markName
+            }
+        val actualMark = foundMarkTest.values().first()
 
-        val preset = createMarkPresetWithMark(markPresetName, foundMark)
-        markPresetDao.insertAll(preset)
+        val preset = createMarkPresetWithMark(markPresetName, actualMark)
+        val insertMarkPreset = markPresetDao.insertAll(preset)
+        insertMarkPreset.test()
+            .assertSubscribed()
+            .assertComplete()
+
         val foundPreset = markPresetDao.getByName(markPresetName)
-
-        assertThat(foundPreset.markId, equalTo(foundMark.id))
+        foundPreset.test()
+            .assertSubscribed()
+            .assertValue {
+                it.markId == actualMark.id
+            }
     }
 
     @Test
@@ -81,20 +114,86 @@ class MarkAndPresetTest {
     fun writeCombineMarkAndMultiplePreset() {
         val markName = "test"
         val markPresetName = "testPreset"
+        val subMarkPresetName = "testSubPreset"
         val size = 2
-        markDao.insertAll(createMark(markName))
-        val foundMark = markDao.getByName(markName)
 
-        val preset = createMarkPresetListWithMark(markPresetName, size, foundMark)
-        markPresetDao.insertAll(*preset.toTypedArray())
+        val insertMark = markDao.insertAll(createMark(markName))
+        insertMark.test()
+            .assertSubscribed()
+            .assertComplete()
+
+        val foundMark = markDao.getByName(markName)
+        val foundMarkTest = foundMark.test()
+        foundMarkTest
+            .assertSubscribed()
+            .assertValue {
+                it.name == markName
+            }
+        val actualMark = foundMarkTest.values().first()
+
+        val preset = createMarkPresetListWithMark(markPresetName, size, actualMark)
+        val insertMarkPreset = markPresetDao.insertAll(*preset.toTypedArray())
+        insertMarkPreset.test()
+            .assertSubscribed()
+            .assertComplete()
+
+        // For filtering
+        val subPreset = createMarkPresetListWithMark(subMarkPresetName, size, null)
+        val insertMarkPresetWithoutMark = markPresetDao.insertAll(*subPreset.toTypedArray())
+        insertMarkPresetWithoutMark.test()
+            .assertSubscribed()
+            .assertComplete()
 
         val foundPresets = markPresetDao.getAllByMarkName(markName)
+        foundPresets.test()
+            .assertSubscribed()
+            .assertValue { list ->
+                list.size == size
+            }
+            .assertValue { list ->
+                list.all { it.markId == actualMark.id }
+            }
+            .assertValue { list ->
+                list.all { it.name.startsWith(markPresetName) }
+            }
+    }
 
-        for (foundPreset in foundPresets) {
-            assertThat(foundPreset.markId, equalTo(foundMark.id))
-            assertThat(foundPreset.name, equalTo(markName))
-        }
-        assertThat(foundPresets.size, equalTo(size))
+    @Test
+    @Throws(Exception::class)
+    fun writeCombineMarkAndMultiplePresetDetailView() {
+        val markName = "test"
+        val markPresetName = "testPreset"
+        val size = 2
+
+        val insertMark = markDao.insertAll(createMark(markName))
+        insertMark.test()
+            .assertSubscribed()
+            .assertComplete()
+
+        val foundMark = markDao.getByName(markName)
+        val foundMarkTest = foundMark.test()
+        foundMarkTest
+            .assertSubscribed()
+            .assertValue {
+                it.name == markName
+            }
+        val actualMark = foundMarkTest.values().first()
+
+        val preset = createMarkPresetListWithMark(markPresetName, size, actualMark)
+        val insertMarkPreset = markPresetDao.insertAll(*preset.toTypedArray())
+        insertMarkPreset.test()
+            .assertSubscribed()
+            .assertComplete()
+
+        val detailViewsByAll = markPresetDao.getDetailViewAll()
+        detailViewsByAll.test()
+            .assertSubscribed()
+            .assertValue { list ->
+                list.size == size
+            }
+            .assertValue { list ->
+                list.all { it.image.byteCount > 0 }
+            }
     }
 
 }
