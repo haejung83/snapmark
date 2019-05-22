@@ -155,6 +155,16 @@ class MarkAndPresetTest {
             .assertValue { list ->
                 list.all { it.name.startsWith(markPresetName) }
             }
+
+        val detailViewsByAll = markPresetDao.getDetailViewAll()
+        detailViewsByAll.test()
+            .assertSubscribed()
+            .assertValue { list ->
+                list.size == size
+            }
+            .assertValue { list ->
+                list.all { it.image.byteCount > 0 }
+            }
     }
 
 }

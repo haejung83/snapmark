@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.haejung.snapmark.data.Mark
 import com.haejung.snapmark.data.MarkPreset
+import com.haejung.snapmark.data.MarkPresetDetailView
 import com.haejung.snapmark.data.source.converter.BitmapTypeConverter
 import com.haejung.snapmark.data.source.converter.MatrixTypeConverter
 
@@ -14,6 +15,7 @@ import com.haejung.snapmark.data.source.converter.MatrixTypeConverter
     entities = [
         Mark::class,
         MarkPreset::class],
+    views = [MarkPresetDetailView::class],
     exportSchema = false, version = 1
 )
 @TypeConverters(

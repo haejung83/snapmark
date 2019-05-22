@@ -2,6 +2,7 @@ package com.haejung.snapmark.data.source.local
 
 import androidx.room.*
 import com.haejung.snapmark.data.MarkPreset
+import com.haejung.snapmark.data.MarkPresetDetailView
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
@@ -23,6 +24,15 @@ interface MarkPresetDao {
 
     @Query("SELECT mark_preset.preset_id, mark_preset.matrix, mark_preset.mark_id, mark_preset.name FROM mark_preset INNER JOIN mark on mark.id = mark_id WHERE mark.name = :markName")
     fun getAllByMarkName(markName: String): Flowable<List<MarkPreset>>
+
+    @Query("SELECT * FROM MarkPresetDetailView")
+    fun getDetailViewAll(): Flowable<List<MarkPresetDetailView>>
+
+    @Query("SELECT * FROM MarkPresetDetailView WHERE preset_id = :presetId")
+    fun getDetailViewById(presetId: Int): Flowable<MarkPresetDetailView>
+
+    @Query("SELECT * FROM MarkPresetDetailView WHERE name = :name")
+    fun getDetailViewByName(name: String): Flowable<MarkPresetDetailView>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertAll(vararg markPreset: MarkPreset): Completable

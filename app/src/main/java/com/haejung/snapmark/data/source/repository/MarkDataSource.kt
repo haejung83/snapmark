@@ -9,7 +9,7 @@ interface MarkDataSource {
 
     fun getMarks(): Flowable<List<Mark>>
 
-    fun getMarkById(): Flowable<Mark>
+    fun getMarkById(id: Int): Flowable<Mark>
 
     fun insertAll(vararg marks: Mark): Completable
 
