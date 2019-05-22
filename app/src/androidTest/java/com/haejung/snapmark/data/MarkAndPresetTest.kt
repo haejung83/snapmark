@@ -137,6 +137,7 @@ class MarkAndPresetTest {
             .assertSubscribed()
             .assertComplete()
 
+        // For filtering
         val subPreset = createMarkPresetListWithMark(subMarkPresetName, size, null)
         val insertMarkPresetWithoutMark = markPresetDao.insertAll(*subPreset.toTypedArray())
         insertMarkPresetWithoutMark.test()
@@ -155,6 +156,34 @@ class MarkAndPresetTest {
             .assertValue { list ->
                 list.all { it.name.startsWith(markPresetName) }
             }
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun writeCombineMarkAndMultiplePresetDetailView() {
+        val markName = "test"
+        val markPresetName = "testPreset"
+        val size = 2
+
+        val insertMark = markDao.insertAll(createMark(markName))
+        insertMark.test()
+            .assertSubscribed()
+            .assertComplete()
+
+        val foundMark = markDao.getByName(markName)
+        val foundMarkTest = foundMark.test()
+        foundMarkTest
+            .assertSubscribed()
+            .assertValue {
+                it.name == markName
+            }
+        val actualMark = foundMarkTest.values().first()
+
+        val preset = createMarkPresetListWithMark(markPresetName, size, actualMark)
+        val insertMarkPreset = markPresetDao.insertAll(*preset.toTypedArray())
+        insertMarkPreset.test()
+            .assertSubscribed()
+            .assertComplete()
 
         val detailViewsByAll = markPresetDao.getDetailViewAll()
         detailViewsByAll.test()

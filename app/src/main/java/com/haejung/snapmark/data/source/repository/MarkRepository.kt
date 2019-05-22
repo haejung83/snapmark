@@ -6,7 +6,7 @@ import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
 
-class MarkRepository(
+class MarkRepository private constructor(
     private val markDao: MarkDao
 ) : MarkDataSource {
 
@@ -27,5 +27,16 @@ class MarkRepository(
 
     override fun deleteMarkAll(): Single<Int> =
         markDao.deleteAll()
+
+    companion object {
+        private var instance: MarkRepository? = null
+
+        fun getInstance(markDao: MarkDao): MarkRepository =
+            instance ?: synchronized(this) {
+                instance ?: MarkRepository(markDao).apply {
+                    instance = this
+                }
+            }
+    }
 
 }

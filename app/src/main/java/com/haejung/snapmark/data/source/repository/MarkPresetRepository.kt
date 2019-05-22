@@ -1,12 +1,13 @@
 package com.haejung.snapmark.data.source.repository
 
 import com.haejung.snapmark.data.MarkPreset
+import com.haejung.snapmark.data.MarkPresetDetailView
 import com.haejung.snapmark.data.source.local.MarkPresetDao
 import io.reactivex.Completable
 import io.reactivex.Flowable
 import io.reactivex.Single
 
-class MarkPresetRepository(
+class MarkPresetRepository private constructor(
     private val markPresetDao: MarkPresetDao
 ) : MarkPresetDataSource {
 
@@ -22,6 +23,15 @@ class MarkPresetRepository(
     override fun getMarkPresetsByMarkName(markName: String): Flowable<List<MarkPreset>> =
         markPresetDao.getAllByMarkName(markName)
 
+    override fun getMarkPresetDetailViewAll(): Flowable<List<MarkPresetDetailView>> =
+        markPresetDao.getDetailViewAll()
+
+    override fun getMarkPresetDetailViewById(id: Int): Flowable<MarkPresetDetailView> =
+        markPresetDao.getDetailViewById(id)
+
+    override fun getMarkPresetDetailViewByName(name: String): Flowable<MarkPresetDetailView> =
+        markPresetDao.getDetailViewByName(name)
+
     override fun insertAll(vararg markPresets: MarkPreset): Completable =
         markPresetDao.insertAll(*markPresets)
 
@@ -33,5 +43,16 @@ class MarkPresetRepository(
 
     override fun deleteMarkPresets(): Single<Int> =
         markPresetDao.deleteAll()
+
+    companion object {
+        private var instance: MarkPresetRepository? = null
+
+        fun getInstance(markPresetDao: MarkPresetDao): MarkPresetRepository =
+            instance ?: synchronized(this) {
+                instance ?: MarkPresetRepository(markPresetDao).apply {
+                    instance = this
+                }
+            }
+    }
 
 }
