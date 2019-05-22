@@ -1,7 +1,15 @@
 <resources>
+
+    <!-- Common -->
     <string name="app_name">SnapMark</string>
-    <string name="title_activity_main">MainActivity</string>
-    <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
+    <string name="title_image_content_description">Image</string>
+
+    <!-- Navigation -->
+    <string name="title_nav_mark">Mark</string>
+    <string name="title_nav_mark_preset">Preset</string>
+    <string name="title_nav_sns">SNS</string>
+
+    <!-- Mark -->
+    <string name="title_view_item_menu">Menu</string>
+
 </resources>
