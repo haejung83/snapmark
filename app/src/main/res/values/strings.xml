@@ -1,15 +1,20 @@
 <resources>
 
-    <!-- Common -->
-    <string name="app_name">SnapMark</string>
-    <string name="title_image_content_description">Image</string>
+  <!-- Common -->
+  <string name="app_name">SnapMark</string>
+  <string name="title_image_content_description">Image</string>
 
-    <!-- Navigation -->
-    <string name="title_nav_mark">Mark</string>
-    <string name="title_nav_mark_preset">Preset</string>
-    <string name="title_nav_sns">SNS</string>
+  <!-- Navigation -->
+  <string name="title_nav_mark">Mark</string>
+  <string name="title_nav_mark_preset">Preset</string>
+  <string name="title_nav_sns">SNS</string>
 
-    <!-- Mark -->
-    <string name="title_view_item_menu">Menu</string>
+  <!-- Mark -->
+  <string name="title_view_item_menu">Menu</string>
+  <string name="title_ok">Ok</string>
+  <string name="title_cancel">Cancel</string>
+  <string name="title_yes">Yes</string>
+  <string name="title_no">No</string>
+  <string name="title_empty">Empty</string>
 
 </resources>
