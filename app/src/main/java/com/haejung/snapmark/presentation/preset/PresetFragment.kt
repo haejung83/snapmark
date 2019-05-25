@@ -4,9 +4,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import com.haejung.snapmark.R
+import com.haejung.snapmark.extend.obtainViewModel
 
 class PresetFragment : Fragment() {
 
@@ -25,7 +27,7 @@ class PresetFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewModel = ViewModelProviders.of(this).get(PresetViewModel::class.java)
+        viewModel = (activity as AppCompatActivity).obtainViewModel(PresetViewModel::class.java)
         // TODO: Use the ViewModel
     }
 
