@@ -18,8 +18,8 @@ class MarkListAdapter(
         override fun onClick(mark: Mark, action: MarkFragment.MarkActionListener.Action?) {
             Timber.d("OnClick: ${mark.id} - $action")
             when (action) {
-                MarkFragment.MarkActionListener.Action.ACTION_MARK_SNAP -> viewModel.snap(mark)
-                MarkFragment.MarkActionListener.Action.ACTION_MARK_MENU -> viewModel.showMenu(mark)
+                MarkFragment.MarkActionListener.Action.ACTION_SNAP -> viewModel.snap(mark)
+                MarkFragment.MarkActionListener.Action.ACTION_OPEN_MENU -> viewModel.showMenu(mark)
             }
         }
     }

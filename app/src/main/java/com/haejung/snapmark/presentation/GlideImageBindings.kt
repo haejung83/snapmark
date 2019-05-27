@@ -9,13 +9,17 @@ object GlideImageBindings {
 
     @BindingAdapter("app:glideImageUrl")
     @JvmStatic
-    fun loadImageByUrl(view: ImageView, url: String) {
-        Glide.with(view).load(url).into(view)
+    fun loadImageByUrl(view: ImageView, url: String?) {
+        url?.let {
+            Glide.with(view).load(it).into(view)
+        }
     }
 
     @BindingAdapter("app:glideImageBitmap")
     @JvmStatic
-    fun loadImageByBitmap(view: ImageView, bitmap: Bitmap) {
-        Glide.with(view).load(bitmap).into(view)
+    fun loadImageByBitmap(view: ImageView, bitmap: Bitmap?) {
+        bitmap?.let {
+            Glide.with(view).load(it).into(view)
+        }
     }
 }

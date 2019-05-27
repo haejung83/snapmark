@@ -20,12 +20,13 @@
       style="@style/Widget.MaterialComponents.CardView"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_marginLeft="3dp"
-      android:layout_marginTop="3dp"
-      android:layout_marginRight="3dp"
+      android:layout_marginStart="@dimen/mark_card_margin"
+      android:layout_marginTop="@dimen/mark_card_margin"
+      android:layout_marginEnd="@dimen/mark_card_margin"
       android:minHeight="120dp"
-      android:onClick="@{() -> actionListener.onClick(mark, Action.ACTION_MARK_SNAP)}"
-      android:id="@+id/container_root">
+      android:onClick="@{() -> actionListener.onClick(mark, Action.ACTION_SNAP)}"
+      android:id="@+id/container_root"
+      app:cardElevation="1dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -36,6 +37,8 @@
           android:layout_width="0dp"
           android:layout_height="0dp"
           android:id="@+id/imageMark"
+          android:layout_marginTop="5dp"
+          android:layout_marginBottom="5dp"
           app:glideImageBitmap="@{mark.image}"
           app:srcCompat="@drawable/ic_preset_black_24dp"
           app:layout_constraintTop_toTopOf="parent"
@@ -49,7 +52,7 @@
           app:layout_constraintBottom_toBottomOf="parent"
           app:layout_constraintEnd_toEndOf="parent"
           android:id="@+id/material_text_button"
-          android:onClick="@{() -> actionListener.onClick(mark, Action.ACTION_MARK_MENU)}"
+          android:onClick="@{() -> actionListener.onClick(mark, Action.ACTION_OPEN_MENU)}"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
           android:text="@string/title_view_item_menu"
