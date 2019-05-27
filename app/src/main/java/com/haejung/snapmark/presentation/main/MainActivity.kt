@@ -2,7 +2,9 @@ package com.haejung.snapmark.presentation.main
 
 import android.os.Bundle
 import android.view.MenuItem
+import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.haejung.snapmark.R
 import com.haejung.snapmark.extend.replaceFragmentInActivity
@@ -44,14 +46,38 @@ class MainActivity : AppCompatActivity() {
             object : BottomNavigationView.OnNavigationItemSelectedListener {
                 override fun onNavigationItemSelected(item: MenuItem): Boolean {
                     when (item.itemId) {
-                        R.id.navigation_mark -> replaceFragmentInActivity(markFragment, R.id.container_fragment)
-                        R.id.navigation_preset -> replaceFragmentInActivity(presetFragment, R.id.container_fragment)
-                        R.id.navigation_sns -> replaceFragmentInActivity(snsFragment, R.id.container_fragment)
+                        R.id.navigation_mark -> replaceFragmentAndActionBarStatus(
+                            markFragment,
+                            getString(R.string.title_nav_mark),
+                            R.drawable.ic_watermark_black_24dp
+                        )
+                        R.id.navigation_preset -> replaceFragmentAndActionBarStatus(
+                            presetFragment,
+                            getString(R.string.title_nav_mark_preset),
+                            R.drawable.ic_preset_black_24dp
+                        )
+                        R.id.navigation_sns -> replaceFragmentAndActionBarStatus(
+                            snsFragment,
+                            getString(R.string.title_nav_sns),
+                            R.drawable.ic_sns_black_24dp
+                        )
                         else -> return false
                     }
                     return true
                 }
             })
+    }
+
+    private fun replaceFragmentAndActionBarStatus(
+        targetFragment: Fragment,
+        actionBarTitle: String,
+        @DrawableRes actionBarIcon: Int
+    ) {
+        replaceFragmentInActivity(targetFragment, R.id.container_fragment)
+        supportActionBar?.let {
+            it.title = actionBarTitle
+            it.setHomeAsUpIndicator(actionBarIcon)
+        }
     }
 
     private fun setupViewFragment() {
