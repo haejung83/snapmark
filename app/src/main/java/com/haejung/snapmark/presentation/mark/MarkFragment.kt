@@ -7,12 +7,16 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.haejung.snapmark.R
 import com.haejung.snapmark.data.Mark
 import com.haejung.snapmark.databinding.MarkFragmentBinding
 import com.haejung.snapmark.extend.obtainViewModel
+import com.haejung.snapmark.presentation.Event
+import com.haejung.snapmark.presentation.addmark.AddMarkActivity
+import timber.log.Timber
 
 class MarkFragment private constructor() : Fragment() {
 
@@ -25,7 +29,21 @@ class MarkFragment private constructor() : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         viewDataBinding = MarkFragmentBinding.inflate(inflater, container, false).apply {
-            viewmodel = (activity as AppCompatActivity).obtainViewModel(MarkViewModel::class.java)
+            viewmodel = (activity as AppCompatActivity).obtainViewModel(MarkViewModel::class.java).also {
+                // New Mark
+                it.newMarkEvent.observe(this@MarkFragment, Observer<Event<Unit>> { event ->
+                    event.getContentIfNotHandled()?.let {
+                        Timber.d("Processing Add New Event")
+                        openNewMark()
+                    }
+                })
+                // Snap
+                it.snapEvent.observe(this@MarkFragment, Observer<Event<Int>> { event ->
+                    event.getContentIfNotHandled()?.let {
+                        Timber.d("Processing Snap Event")
+                    }
+                })
+            }
         }
 
         return viewDataBinding.root
@@ -65,10 +83,14 @@ class MarkFragment private constructor() : Fragment() {
         }
     }
 
+    private fun openNewMark() {
+        startActivity(Intent(context, AddMarkActivity::class.java))
+    }
+
     interface MarkActionListener {
         enum class Action {
-            ACTION_MARK_SNAP,
-            ACTION_MARK_MENU
+            ACTION_SNAP,
+            ACTION_OPEN_MENU
         }
 
         fun onClick(mark: Mark, action: Action?)

@@ -6,4 +6,8 @@
   <!-- Temporary -->
   <dimen name="list_item_padding">8dp</dimen>
   <dimen name="fab_margin">16dp</dimen>
+
+  <!-- Mark -->
+  <dimen name="mark_card_margin">8dp</dimen>
+
 </resources>
