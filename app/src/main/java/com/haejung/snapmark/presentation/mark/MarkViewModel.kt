@@ -50,7 +50,7 @@ class MarkViewModel(
     }
 
     fun start() {
-        loadMarks()
+        empty.value?.let { if (it) loadMarks() }
     }
 
     private fun loadMarks() {
@@ -61,7 +61,6 @@ class MarkViewModel(
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe {
                     Timber.d("Loaded")
-                    // TODO: Temporary
                     _items.value = it
                 })
     }

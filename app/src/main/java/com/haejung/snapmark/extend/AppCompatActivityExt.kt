@@ -29,14 +29,26 @@ fun AppCompatActivity.replaceFragmentInActivity(fragment: Fragment, @IdRes frame
     }
 }
 
-fun AppCompatActivity.addFragmentToActivity(fragment: Fragment, tag: String) {
+fun AppCompatActivity.addFragmentToActivity(fragment: Fragment, @IdRes frameId: Int, tag: String) {
     supportFragmentManager.transact {
-        add(fragment, tag)
+        add(frameId, fragment, tag)
     }
 }
 
-fun AppCompatActivity.setupActionBar(@IdRes toobarId: Int, action: ActionBar.() -> Unit) {
-    setSupportActionBar(findViewById(toobarId))
+fun AppCompatActivity.hideFragmentInActivity(fragment: Fragment) {
+    supportFragmentManager.transact {
+        hide(fragment)
+    }
+}
+
+fun AppCompatActivity.showFragmentInActivity(fragment: Fragment) {
+    supportFragmentManager.transact {
+        show(fragment)
+    }
+}
+
+fun AppCompatActivity.setupActionBar(@IdRes toolbarId: Int, action: ActionBar.() -> Unit) {
+    setSupportActionBar(findViewById(toolbarId))
     supportActionBar?.run {
         action()
     }

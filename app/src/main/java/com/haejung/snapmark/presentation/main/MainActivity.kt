@@ -7,8 +7,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.haejung.snapmark.R
-import com.haejung.snapmark.extend.replaceFragmentInActivity
+import com.haejung.snapmark.extend.addFragmentToActivity
+import com.haejung.snapmark.extend.hideFragmentInActivity
 import com.haejung.snapmark.extend.setupActionBar
+import com.haejung.snapmark.extend.showFragmentInActivity
 import com.haejung.snapmark.presentation.mark.MarkFragment
 import com.haejung.snapmark.presentation.preset.PresetFragment
 import com.haejung.snapmark.presentation.sns.SnsFragment
@@ -27,6 +29,8 @@ class MainActivity : AppCompatActivity() {
     private val snsFragment by lazy(LazyThreadSafetyMode.NONE) {
         SnsFragment.newInstance()
     }
+
+    private var activatedFragment: Fragment? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,20 +72,34 @@ class MainActivity : AppCompatActivity() {
             })
     }
 
+    private fun setupViewFragment() {
+        replaceFragmentAndActionBarStatus(
+            markFragment,
+            getString(R.string.title_nav_mark),
+            R.drawable.ic_watermark_black_24dp
+        )
+    }
+
     private fun replaceFragmentAndActionBarStatus(
         targetFragment: Fragment,
         actionBarTitle: String,
         @DrawableRes actionBarIcon: Int
     ) {
-        replaceFragmentInActivity(targetFragment, R.id.container_fragment)
+        activatedFragment?.let { hideFragmentInActivity(it) }
+
+        if (targetFragment.isAdded) {
+            showFragmentInActivity(targetFragment)
+        } else {
+            addFragmentToActivity(targetFragment, R.id.container_fragment, actionBarTitle)
+        }
+
+        activatedFragment = targetFragment
+
         supportActionBar?.let {
             it.title = actionBarTitle
             it.setHomeAsUpIndicator(actionBarIcon)
         }
     }
 
-    private fun setupViewFragment() {
-        replaceFragmentInActivity(markFragment, R.id.container_fragment)
-    }
 
 }
