@@ -15,18 +15,11 @@ import com.haejung.snapmark.presentation.Event
 fun View.showSnackbar(message: String, duration: Int) =
     Snackbar.make(this, message, duration).show()
 
+fun View.setupSnackbar(lifecycleOwner: LifecycleOwner, snackbarEvent: LiveData<Event<Int>>, timeLength: Int) =
+    snackbarEvent.observe(lifecycleOwner, Observer { event ->
+        event.getContentIfNotHandled()?.let { showSnackbar(context.getString(it), timeLength) }
+    })
+
 fun ViewGroup.inflate(@LayoutRes layoutRes: Int): View =
     LayoutInflater.from(context).inflate(layoutRes, this, false)
 
-fun View.setupSnackbar(
-    lifecycleOwner: LifecycleOwner,
-    snackbarEvent: LiveData<Event<Int>>,
-    timeLength: Int
-) {
-
-    snackbarEvent.observe(lifecycleOwner, Observer { event ->
-        event.getContentIfNotHandled()?.let {
-            showSnackbar(context.getString(it), timeLength)
-        }
-    })
-}
