@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+  <data>
+    <import type="android.view.View.OnClickListener"/>
+    <import type="com.haejung.snapmark.presentation.mark.MarkActionListener.Action"/>
+
+    <variable
+        name="mark"
+        type="com.haejung.snapmark.data.Mark"/>
+
+    <variable
+        name="actionListener"
+        type="com.haejung.snapmark.presentation.mark.MarkActionListener"/>
+  </data>
+
+  <com.google.android.material.card.MaterialCardView
+      style="@style/Widget.MaterialComponents.CardView"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="@dimen/mark_card_margin"
+      android:layout_marginTop="@dimen/mark_card_margin"
+      android:layout_marginEnd="@dimen/mark_card_margin"
+      android:id="@+id/container_root"
+      android:onClick="@{(view) -> actionListener.onClick(Action.ACTION_SNAP, mark, view)}"
+      app:cardElevation="1dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/container_layout">
+
+      <ImageView
+          android:layout_width="128dp"
+          android:layout_height="128dp"
+          android:id="@+id/imageMark"
+          android:layout_marginTop="5dp"
+          app:glideImageBitmap="@{mark.image}"
+          app:srcCompat="@drawable/ic_preset_black_24dp"
+          app:layout_constraintTop_toTopOf="parent"
+          app:layout_constraintStart_toStartOf="parent"
+          app:layout_constraintEnd_toEndOf="parent"
+          android:contentDescription="@string/title_image_content_description"
+      />
+
+      <com.google.android.material.button.MaterialButton
+          style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+          app:layout_constraintTop_toBottomOf="@+id/imageMark"
+          app:layout_constraintBottom_toBottomOf="@+id/imageMark"
+          app:layout_constraintEnd_toEndOf="parent"
+          android:id="@+id/material_text_button"
+          android:onClick="@{(view) -> actionListener.onClick(Action.ACTION_OPEN_MENU, mark, view)}"
+          android:text="@string/title_view_item_menu"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginBottom="8dp"
+          android:layout_marginEnd="8dp"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+  </com.google.android.material.card.MaterialCardView>
+
+</layout>

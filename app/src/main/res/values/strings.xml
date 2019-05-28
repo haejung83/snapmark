@@ -1,7 +1,30 @@
 <resources>
-    <string name="app_name">SnapMark</string>
-    <string name="title_activity_main">MainActivity</string>
-    <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
+
+  <!-- Common -->
+  <string name="app_name">SnapMark</string>
+  <string name="title_ok">OK</string>
+  <string name="title_cancel">Cancel</string>
+  <string name="title_load">Load</string>
+  <string name="title_save">Save</string>
+  <string name="title_yes">Yes</string>
+  <string name="title_no">No</string>
+  <string name="title_empty">Empty</string>
+  <string name="title_image_content_description">Image</string>
+  <string name="title_view_item_menu">Menu</string>
+
+  <!-- Navigation -->
+  <string name="title_nav_mark">Mark</string>
+  <string name="title_nav_mark_preset">Preset</string>
+  <string name="title_nav_sns">SNS</string>
+
+  <!-- Mark -->
+  <string name="title_options_remove">Remove</string>
+  <string name="title_options_create_preset">Create Preset</string>
+  <string name="title_snackbar_msg_removed">Removed</string>
+  <string name="title_dialog_title_removed">Remove mark?</string>
+  <string name="title_dialog_msg_removed">The selected mark will be removed.</string>
+
+  <!-- Add Mark -->
+  <string name="title_add_mark">Add Mark</string>
+
 </resources>
