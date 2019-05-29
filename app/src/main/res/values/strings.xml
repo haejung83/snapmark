@@ -27,4 +27,7 @@
   <!-- Add Mark -->
   <string name="title_add_mark">Add Mark</string>
 
+  <!-- Snap -->
+  <string name="title_gallery_picking_multi_images">Select one or more pictures</string>
+
 </resources>

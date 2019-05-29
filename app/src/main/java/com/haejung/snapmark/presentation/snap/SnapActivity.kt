@@ -5,7 +5,6 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import com.haejung.snapmark.R
 import com.haejung.snapmark.extend.replaceFragmentInActivity
-import timber.log.Timber
 
 
 class SnapActivity : AppCompatActivity() {
@@ -18,13 +17,10 @@ class SnapActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.snap_activity)
 
-        // Extract extra from Intent
-        intent?.extras?.let {
-            Timber.d("Mark ID: ${it.getInt(EXTRA_WITH_MARK, EXTRA_DEFAULT_VALUE)}")
-            Timber.d("Preset ID: ${it.getInt(EXTRA_WITH_PRESET, EXTRA_DEFAULT_VALUE)}")
-        }
-
-        replaceFragmentInActivity(snapFragment, R.id.container)
+        replaceFragmentInActivity(snapFragment.apply {
+            // Extract extra from Intent
+            intent?.extras?.let { arguments = it }
+        }, R.id.container)
     }
 
     override fun onOptionsItemSelected(item: MenuItem) =
@@ -37,18 +33,21 @@ class SnapActivity : AppCompatActivity() {
         }
 
     companion object {
-        private const val EXTRA_DEFAULT_VALUE = -1
-        private const val EXTRA_WITH_MARK = "extra_with_mark"
-        private const val EXTRA_WITH_PRESET = "extra_with_preset"
+        internal const val EXTRA_TYPE = "extra_type"
+        internal const val EXTRA_TYPE_MARK = "extra_type_mark"
+        internal const val EXTRA_TYPE_PRESET = "extra_type_preset"
+        internal const val EXTRA_ID = "extra_id"
 
         fun createBundleWithMark(markId: Int) =
             Bundle().apply {
-                putInt(EXTRA_WITH_MARK, markId)
+                putString(EXTRA_TYPE, EXTRA_TYPE_MARK)
+                putInt(EXTRA_ID, markId)
             }
 
         fun createBundleWithPreset(presetId: Int) =
             Bundle().apply {
-                putInt(EXTRA_WITH_PRESET, presetId)
+                putString(EXTRA_TYPE, EXTRA_TYPE_PRESET)
+                putInt(EXTRA_ID, presetId)
             }
     }
 

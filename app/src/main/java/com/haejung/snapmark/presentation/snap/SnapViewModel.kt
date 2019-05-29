@@ -1,8 +1,11 @@
 package com.haejung.snapmark.presentation.snap
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.haejung.snapmark.data.source.repository.MarkPresetRepository
 import com.haejung.snapmark.data.source.repository.MarkRepository
+import com.haejung.snapmark.presentation.Event
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
@@ -17,6 +20,10 @@ class SnapViewModel(
     private val disposable by lazy {
         CompositeDisposable()
     }
+
+    private val _snackbarMessage = MutableLiveData<Event<Int>>()
+    val snackbarMessage: LiveData<Event<Int>>
+        get() = _snackbarMessage
 
     override fun onCleared() {
         disposable.clear()
@@ -34,6 +41,7 @@ class SnapViewModel(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe {
                 // do something here
+                Timber.d("Loaded mark with $markId")
             }
             .addTo(disposable)
     }
@@ -45,6 +53,7 @@ class SnapViewModel(
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe {
                 // do something here
+                Timber.d("Loaded preset with $presetId")
             }
             .addTo(disposable)
     }
