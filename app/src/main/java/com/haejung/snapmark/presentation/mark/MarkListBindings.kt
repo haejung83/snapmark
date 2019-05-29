@@ -10,7 +10,7 @@ object MarkListBindings {
     @JvmStatic
     fun setItems(recyclerView: RecyclerView, items: List<Mark>) {
         with(recyclerView.adapter as MarkListAdapter) {
-            this.items = items
+            updateMarkItems(items)
         }
     }
 

@@ -1,24 +1,29 @@
 package com.haejung.snapmark.presentation.mark
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.DialogInterface
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.PopupMenu
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.haejung.snapmark.R
 import com.haejung.snapmark.data.Mark
 import com.haejung.snapmark.databinding.ViewItemMarkBinding
-import kotlin.properties.Delegates
+import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
+import timber.log.Timber
 
 
 class MarkListAdapter(
     private val viewModel: MarkViewModel
 ) : RecyclerView.Adapter<MarkListAdapter.ViewHolder>() {
 
-    var items: List<Mark> by Delegates.observable(emptyList()) { _, _, _ -> notifyDataSetChanged() }
+    private val items = mutableListOf<Mark>()
 
     private val itemClickListener = object : MarkActionListener {
         override fun onClick(action: MarkActionListener.Action, mark: Mark, view: View?) {
@@ -69,6 +74,18 @@ class MarkListAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.bind(items[position], itemClickListener)
+    }
+
+    @SuppressLint("CheckResult")
+    fun updateMarkItems(marks: List<Mark>) {
+        Single.fromCallable { DiffUtil.calculateDiff(MarkDiffCallback(items, marks)) }
+            .subscribeOn(Schedulers.computation())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                items.clear()
+                items.addAll(marks)
+                it.dispatchUpdatesTo(this)
+            }, { Timber.e(it) })
     }
 
     class ViewHolder(
