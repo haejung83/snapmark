@@ -1,5 +1,6 @@
 package com.haejung.snapmark.presentation.snap
 
+import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -24,6 +25,14 @@ class SnapViewModel(
     private val _snackbarMessage = MutableLiveData<Event<Int>>()
     val snackbarMessage: LiveData<Event<Int>>
         get() = _snackbarMessage
+
+    private val _openGalleryEvent = MutableLiveData<Event<Unit>>()
+    val openGalleryEvent: LiveData<Event<Unit>>
+        get() = _openGalleryEvent
+
+    private val _imageTargetSource = MutableLiveData<Uri>()
+    val imageTargetSource: LiveData<Uri>
+        get() = _imageTargetSource
 
     override fun onCleared() {
         disposable.clear()
@@ -56,6 +65,14 @@ class SnapViewModel(
                 Timber.d("Loaded preset with $presetId")
             }
             .addTo(disposable)
+    }
+
+    fun openGalleryForPicking() {
+        _openGalleryEvent.value = Event(Unit)
+    }
+
+    fun setImageTargetSource(source: Uri) {
+        _imageTargetSource.value = source
     }
 
 }

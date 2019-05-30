@@ -8,6 +8,8 @@
   <string name="title_save">Save</string>
   <string name="title_yes">Yes</string>
   <string name="title_no">No</string>
+  <string name="title_open">Open</string>
+  <string name="title_close">Close</string>
   <string name="title_empty">Empty</string>
   <string name="title_image_content_description">Image</string>
   <string name="title_view_item_menu">Menu</string>

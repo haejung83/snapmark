@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import com.google.android.material.snackbar.Snackbar
 import com.haejung.snapmark.R
 import com.haejung.snapmark.databinding.SnapFragmentBinding
@@ -29,6 +30,9 @@ class SnapFragment : Fragment() {
         viewDataBinding = SnapFragmentBinding.inflate(inflater, container, false).apply {
             viewmodel = (activity as AppCompatActivity).obtainViewModel(SnapViewModel::class.java).also {
                 // Bind here
+                it.openGalleryEvent.observe(this@SnapFragment, Observer { event ->
+                    event.getContentIfNotHandled()?.let { openGallery() }
+                })
             }
         }
         return viewDataBinding.root
@@ -56,9 +60,6 @@ class SnapFragment : Fragment() {
                 else -> Timber.w("No exists argument for launch SnapFragment")
             }
         }
-
-        // FIXME: Temporary
-        openGallery()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -66,6 +67,8 @@ class SnapFragment : Fragment() {
             REQUEST_PICK_MULTI_IMAGE -> {
                 data?.let {
                     Timber.d("onActivityResult: ${data.data} or ${data.clipData}")
+                    data.data?.let { viewDataBinding.viewmodel?.setImageTargetSource(it) }
+                    data.clipData?.let { viewDataBinding.viewmodel?.setImageTargetSource(it.getItemAt(0).uri) }
                 }
                 viewDataBinding.viewmodel?.handleActivityResult(requestCode, resultCode)
             }
