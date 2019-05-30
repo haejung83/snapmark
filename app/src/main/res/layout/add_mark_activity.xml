@@ -14,12 +14,11 @@
       android:id="@+id/appbar_layout">
 
     <androidx.appcompat.widget.Toolbar
+        style="@style/Widget.Shrine.Toolbar"
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorPrimary"
-        android:minHeight="?attr/actionBarSize"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"/>
+        android:minHeight="?attr/actionBarSize"/>
 
   </com.google.android.material.appbar.AppBarLayout>
 

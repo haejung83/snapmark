@@ -55,7 +55,7 @@ class MarkListAdapter(
             }
             dialog.dismiss()
         }
-        MaterialAlertDialogBuilder(context).apply {
+        MaterialAlertDialogBuilder(context, R.style.Widget_Shrine_MaterialAlertDialog).apply {
             setTitle(R.string.title_dialog_title_removed)
             setMessage(R.string.title_dialog_msg_removed)
             setPositiveButton(R.string.title_ok, buttonHandler)

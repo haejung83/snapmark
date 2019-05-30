@@ -13,3 +13,7 @@
 .externalNativeBuild
 
 \.idea/dictionaries/haejung\.xml
+
+\.idea/markdown-navigator/
+
+\.idea/markdown-navigator\.xml
