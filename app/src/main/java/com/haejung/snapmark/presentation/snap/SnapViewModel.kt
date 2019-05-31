@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.haejung.snapmark.data.Mark
 import com.haejung.snapmark.data.source.repository.MarkPresetRepository
 import com.haejung.snapmark.data.source.repository.MarkRepository
 import com.haejung.snapmark.presentation.Event
@@ -30,6 +31,10 @@ class SnapViewModel(
     val openGalleryEvent: LiveData<Event<Unit>>
         get() = _openGalleryEvent
 
+    private val _markLoadedEvent = MutableLiveData<Event<Mark>>()
+    val markLoadedEvent: LiveData<Event<Mark>>
+        get() = _markLoadedEvent
+
     private val _imageTargetSource = MutableLiveData<Uri>()
     val imageTargetSource: LiveData<Uri>
         get() = _imageTargetSource
@@ -51,6 +56,7 @@ class SnapViewModel(
             .subscribe {
                 // do something here
                 Timber.d("Loaded mark with $markId")
+                _markLoadedEvent.value = Event(it)
             }
             .addTo(disposable)
     }

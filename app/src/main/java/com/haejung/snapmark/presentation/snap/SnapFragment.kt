@@ -33,6 +33,9 @@ class SnapFragment : Fragment() {
                 it.openGalleryEvent.observe(this@SnapFragment, Observer { event ->
                     event.getContentIfNotHandled()?.let { openGallery() }
                 })
+                it.markLoadedEvent.observe(this@SnapFragment, Observer { event ->
+                    event.getContentIfNotHandled()?.let { mark -> snapEditView.mark = mark }
+                })
             }
         }
         return viewDataBinding.root
