@@ -1,10 +1,7 @@
 package com.haejung.snapmark.presentation.snap
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Matrix
-import android.graphics.Paint
-import android.graphics.RectF
+import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -21,7 +18,8 @@ class SnapEditView @JvmOverloads constructor(
     private val drawPoints = FloatArray(8)
     private val transformedRect = RectF()
     private val transformedPoints = FloatArray(8)
-    private var previousCoordinate = FloatArray(2)
+    private val previousPoint = PointF()
+    private val scaleAnchorPoint = PointF()
     private var cornerBounds = CornerBounds.CENTER
 
     private val aColor: Int by lazy {
@@ -59,10 +57,14 @@ class SnapEditView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
+//        Timber.i("onDraw")
         canvas?.let {
             it.drawColor(bColor)
+            it.drawLine(width / 2F, 0F, width / 2F, height.toFloat(), borderPaint)
+
             mark?.image?.let { bitmap ->
                 it.drawBitmap(bitmap, drawMatrix, null)
+                it.drawRect(transformedRect, borderPaint)
                 it.drawLine(
                     transformedPoints[0],
                     transformedPoints[1],
@@ -92,7 +94,6 @@ class SnapEditView @JvmOverloads constructor(
                     borderPaint
                 )
             }
-//            it.drawRect(transformedRect, borderPaint)
         }
     }
 
@@ -102,62 +103,70 @@ class SnapEditView @JvmOverloads constructor(
         drawRectF.set(INBOUND, INBOUND, width - INBOUND, height - INBOUND)
     }
 
+    private var needToRender = false
+
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         event?.let {
             when (event.action) {
                 MotionEvent.ACTION_MOVE -> {
                     parent.requestDisallowInterceptTouchEvent(false)
-                    val dx = event.x - previousCoordinate[0]
-                    val dy = event.y - previousCoordinate[1]
+                    val dx = event.x - previousPoint.x
+                    val dy = event.y - previousPoint.y
 
+                    needToRender = true
                     when (cornerBounds) {
                         CornerBounds.CENTER -> drawMatrix.postTranslate(dx, dy)
                         CornerBounds.RIGHT_BOTTOM -> drawMatrix.postScale(
-                            transformedRect.width() / (transformedRect.width() - dx * 2),
-                            transformedRect.height() / (transformedRect.height() - dy * 2),
-                            transformedRect.centerX(),
-                            transformedRect.centerY()
+                            1F + (1F * (dx / transformedRect.width())),
+                            1F + (1F * (dy / transformedRect.height())),
+                            scaleAnchorPoint.x,
+                            scaleAnchorPoint.y
                         )
                         CornerBounds.RIGHT_TOP -> drawMatrix.postScale(
-                            transformedRect.width() / (transformedRect.width() - dx * 2),
-                            transformedRect.height() / (transformedRect.height() + dy * 2),
-                            transformedRect.centerX(),
-                            transformedRect.centerY()
+                            1F + (1F * (dx / transformedRect.width())),
+                            1F - (1F * (dy / transformedRect.height())),
+                            scaleAnchorPoint.x,
+                            scaleAnchorPoint.y
                         )
                         CornerBounds.LEFT_BOTTOM -> drawMatrix.postScale(
-                            transformedRect.width() / (transformedRect.width() + dx * 2),
-                            transformedRect.height() / (transformedRect.height() - dy * 2),
-                            transformedRect.centerX(),
-                            transformedRect.centerY()
+                            1F - (1F * (dx / transformedRect.width())),
+                            1F + (1F * (dy / transformedRect.height())),
+                            scaleAnchorPoint.x,
+                            scaleAnchorPoint.y
                         )
                         CornerBounds.LEFT_TOP -> drawMatrix.postScale(
-                            transformedRect.width() / (transformedRect.width() + dx * 2),
-                            transformedRect.height() / (transformedRect.height() + dy * 2),
-                            transformedRect.centerX(),
-                            transformedRect.centerY()
+                            1F - (1F * (dx / transformedRect.width())),
+                            1F - (1F * (dy / transformedRect.height())),
+                            scaleAnchorPoint.x,
+                            scaleAnchorPoint.y
                         )
+                        else -> needToRender = false
                     }
 
-                    drawMatrix.mapRect(transformedRect, drawRectF)
-                    drawMatrix.mapPoints(transformedPoints, drawPoints)
-                    previousCoordinate[0] = event.x
-                    previousCoordinate[1] = event.y
-                    invalidate()
+                    if (needToRender) {
+                        drawMatrix.mapRect(transformedRect, drawRectF)
+                        drawMatrix.mapPoints(transformedPoints, drawPoints)
+                        previousPoint.set(event.x, event.y)
+                        invalidate()
+                    }
                 }
                 MotionEvent.ACTION_DOWN -> {
-                    previousCoordinate[0] = event.x
-                    previousCoordinate[1] = event.y
-                    cornerBounds = getRegionOfRect(transformedRect, event.x, event.y)
+                    previousPoint.set(event.x, event.y)
+                    cornerBounds = getCornerBoundsByPoints(transformedPoints, event.x, event.y)
                     Timber.i("RegionOfRect: $cornerBounds")
-                    // FIXME: for testing
-                    drawMatrix.postRotate(5f)
+                    when (cornerBounds) {
+                        CornerBounds.RIGHT_BOTTOM -> scaleAnchorPoint.set(transformedRect.left, transformedRect.top)
+                        CornerBounds.RIGHT_TOP -> scaleAnchorPoint.set(transformedRect.left, transformedRect.bottom)
+                        CornerBounds.LEFT_BOTTOM -> scaleAnchorPoint.set(transformedRect.right, transformedRect.top)
+                        CornerBounds.LEFT_TOP -> scaleAnchorPoint.set(transformedRect.right, transformedRect.bottom)
+                        else -> {
+                        }
+                    }
                 }
                 MotionEvent.ACTION_UP -> {
                     parent.requestDisallowInterceptTouchEvent(true)
                 }
-                else -> {
-                    return false
-                }
+                else -> return false
             }
             return true
         }
@@ -168,19 +177,20 @@ class SnapEditView @JvmOverloads constructor(
         LEFT_TOP, LEFT_BOTTOM, RIGHT_TOP, RIGHT_BOTTOM, CENTER, OUTSIDE
     }
 
-    private fun getRegionOfRect(sourceRect: RectF, x: Float, y: Float): CornerBounds {
-        with(sourceRect) {
-            val leftTopCornerBounds = RectF(left - INBOUND, top - INBOUND, left + INBOUND, top + INBOUND)
-            val leftBottomCornerBounds = RectF(left - INBOUND, bottom - INBOUND, left + INBOUND, bottom + INBOUND)
-            val rightTopCornerBounds = RectF(right - INBOUND, top - INBOUND, right + INBOUND, top + INBOUND)
-            val rightBottomCornerBounds = RectF(right - INBOUND, bottom - INBOUND, right + INBOUND, bottom + INBOUND)
+    private fun getCornerBoundsByPoints(sourcePoints: FloatArray, x: Float, y: Float): CornerBounds {
+        with(sourcePoints) {
+            val leftTopCornerBounds = RectF(sourcePoints[0] - INBOUND, sourcePoints[1] - INBOUND, sourcePoints[0] + INBOUND, sourcePoints[1] + INBOUND)
+            val rightTopCornerBounds = RectF(sourcePoints[2] - INBOUND, sourcePoints[3] - INBOUND, sourcePoints[2] + INBOUND, sourcePoints[3] + INBOUND)
+            val rightBottomCornerBounds = RectF(sourcePoints[4] - INBOUND, sourcePoints[5] - INBOUND, sourcePoints[4] + INBOUND, sourcePoints[5] + INBOUND)
+            val leftBottomCornerBounds = RectF(sourcePoints[6] - INBOUND, sourcePoints[7] - INBOUND, sourcePoints[6] + INBOUND, sourcePoints[7] + INBOUND)
+            val centerBounds = RectF(sourcePoints[0], sourcePoints[1], sourcePoints[4], sourcePoints[5])
 
             return when {
                 leftTopCornerBounds.contains(x, y) -> CornerBounds.LEFT_TOP
                 leftBottomCornerBounds.contains(x, y) -> CornerBounds.LEFT_BOTTOM
                 rightTopCornerBounds.contains(x, y) -> CornerBounds.RIGHT_TOP
                 rightBottomCornerBounds.contains(x, y) -> CornerBounds.RIGHT_BOTTOM
-                sourceRect.contains(x, y) -> CornerBounds.CENTER
+                centerBounds.contains(x, y) -> CornerBounds.CENTER
                 else -> CornerBounds.OUTSIDE
             }
         }
@@ -188,7 +198,7 @@ class SnapEditView @JvmOverloads constructor(
 
     companion object {
         const val STROKE_WIDTH = 4F
-        const val INBOUND = 50F
+        const val INBOUND = 10F
     }
 
 }
