@@ -69,6 +69,9 @@ class SnapEditViewV2 @JvmOverloads constructor(
                 transformedRect.set(drawRectF)
                 scaleTransformedRect.set(drawRectF)
 
+                // FIXME: for debugging
+                previousAnchorPoint.set(scaleTransformedRect.centerX(), scaleTransformedRect.centerY())
+
                 drawPoints[0] = transformedRect.left
                 drawPoints[1] = transformedRect.top
                 drawPoints[2] = transformedRect.right
@@ -91,7 +94,6 @@ class SnapEditViewV2 @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
-//        Timber.i("onDraw")
         canvas?.let {
             it.drawColor(bColor)
             it.drawLine(width / 2F, 0F, width / 2F, height.toFloat(), borderPaint)
@@ -100,16 +102,19 @@ class SnapEditViewV2 @JvmOverloads constructor(
                 it.drawBitmap(bitmap, transformer, null)
             }
 
+            // FIXME: for debugging
             it.drawPoints(realPointBuffer.array(), realPointPaint)
             it.drawPoints(transformedPointBuffer.array(), transformedPointPaint)
         }
     }
 
-    // Test
+    // FIXME: for debugging
     private val realPointBuffer = FloatBuffer.allocate(1000)
     private val transformedPointBuffer = FloatBuffer.allocate(1000)
     private val transformer = Matrix()
     private val invertedTransformerForTouching = Matrix()
+    private val previousAnchorPoint = PointF()
+    private var rotateAngle = 0F
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         event?.let {
@@ -117,18 +122,16 @@ class SnapEditViewV2 @JvmOverloads constructor(
                 MotionEvent.ACTION_MOVE -> {
                     parent.requestDisallowInterceptTouchEvent(false)
 
+                    // A delta for translation
                     val dx = event.x - previousPoint[0]
                     val dy = event.y - previousPoint[1]
 
-                    val deltaPoint = FloatArray(2).apply {
-                        this[0] = dx
-                        this[1] = dy
-                    }
+                    // For scale
+                    val pointsForMapping = floatArrayOf(event.x, event.y, *previousPoint)
+                    invertedTransformerForTouching.mapPoints(pointsForMapping)
 
-                    invertedTransformerForTouching.mapPoints(deltaPoint)
-
-                    val dScaleX = deltaPoint[0]
-                    val dScaleY = deltaPoint[1]
+                    val dScaleX = pointsForMapping[0] - pointsForMapping[2]
+                    val dScaleY = pointsForMapping[1] - pointsForMapping[3]
 
                     Timber.i("dx:$dx [sx:$dScaleX], dy:$dy [sy:$dScaleY]")
 
@@ -163,15 +166,17 @@ class SnapEditViewV2 @JvmOverloads constructor(
                     }
 
                     if (needToRender) {
-                        updateTransformMatrix(false)
 
                         scaleMatrix.mapRect(scaleTransformedRect, drawRectF)
-//                        transformer.mapRect(transformedRect, drawRectF)
-//                        transformer.mapPoints(transformedPoints, drawPoints)
+                        /*
+                        transformer.mapRect(transformedRect, drawRectF)
+                        transformer.mapPoints(transformedPoints, drawPoints)
+                        */
 
                         previousPoint[0] = event.x
                         previousPoint[1] = event.y
 
+                        updateTransformMatrix(false)
                         invalidate()
                     }
                 }
@@ -197,8 +202,10 @@ class SnapEditViewV2 @JvmOverloads constructor(
                         transformedPointBuffer.put(transformedPoint)
 
                     scaleMatrix.mapRect(scaleTransformedRect, drawRectF)
-//                    transformer.mapRect(transformedRect, drawRectF)
-//                    transformer.mapPoints(transformedPoints, drawPoints)
+                    /*
+                    transformer.mapRect(transformedRect, drawRectF)
+                    transformer.mapPoints(transformedPoints, drawPoints)
+                    */
 
                     // Calculate corner of bounds
                     cornerBounds = getCornerBoundsByPoints(drawPoints, transformedPoint[0], transformedPoint[1])
@@ -222,19 +229,46 @@ class SnapEditViewV2 @JvmOverloads constructor(
                             scaleTransformedRect.bottom
                         )
                         CornerBounds.Outside -> {
-//                            rotateMatrix.postRotate(5F, drawRectF.width() / 2F, drawRectF.height() / 2F)
-                            rotateMatrix.postRotate(5F)
+                            // FIXME: Test type 2
+                            val diffPoint = floatArrayOf(
+                                previousAnchorPoint.x - scaleTransformedRect.centerX(),
+                                previousAnchorPoint.y - scaleTransformedRect.centerY()
+                            )
+                            Timber.i("DiffPoint: ${diffPoint[0]}, ${diffPoint[1]}")
+
+                            Matrix().apply {
+                                setRotate(rotateAngle)
+                            }.mapPoints(diffPoint)
+
+                            Timber.i("Mapped DiffPoint: ${diffPoint[0]}, ${diffPoint[1]}")
+
+                            // Rotate
+                            rotateAngle += 45
+                            rotateMatrix.setRotate(
+                                rotateAngle,
+                                scaleTransformedRect.centerX(),
+                                scaleTransformedRect.centerY()
+                            )
+
+                            // Translate
+                            rotateMatrix.postTranslate(diffPoint[1], diffPoint[0])
+
+                            previousAnchorPoint.set(scaleTransformedRect.centerX(), scaleTransformedRect.centerY())
+                            Timber.i("scaleTransformedRect X: ${scaleTransformedRect.centerX()}, ${scaleTransformedRect.centerY()}")
+                            Timber.i("rotateMatrix: ${rotateMatrix.toShortString()}")
                         }
                         else -> {
                         }
                     }
                     // Update matrix
-//                    updateTransformMatrix(true)
+                    updateTransformMatrix(true)
                     // Request to draw
                     invalidate()
                 }
 
-                MotionEvent.ACTION_UP -> parent.requestDisallowInterceptTouchEvent(true)
+                MotionEvent.ACTION_UP -> {
+                    parent.requestDisallowInterceptTouchEvent(true)
+                }
                 else -> return false
             }
             return true
@@ -254,7 +288,6 @@ class SnapEditViewV2 @JvmOverloads constructor(
             invertedTransformerForTouching.apply {
                 reset()
                 Matrix().also {
-//                    it.postConcat(scaleMatrix)
                     it.postConcat(rotateMatrix)
                 }.invert(this)
             }
@@ -311,7 +344,7 @@ class SnapEditViewV2 @JvmOverloads constructor(
 
     companion object {
         const val STROKE_WIDTH = 4F
-        const val INBOUND = 10F
+        const val INBOUND = 20F
     }
 
 }
