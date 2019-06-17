@@ -30,7 +30,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
     />
 
-    <com.haejung.snapmark.presentation.snap.SnapEditView
+    <com.haejung.snapmark.presentation.snap.snapedit.SnapEditView
         android:id="@+id/snapEditView"
         android:layout_width="0dp"
         android:layout_height="0dp"

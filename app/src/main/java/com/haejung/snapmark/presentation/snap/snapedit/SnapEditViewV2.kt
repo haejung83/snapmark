@@ -1,4 +1,4 @@
-package com.haejung.snapmark.presentation.snap
+package com.haejung.snapmark.presentation.snap.snapedit
 
 import android.content.Context
 import android.graphics.*
@@ -11,7 +11,7 @@ import com.haejung.snapmark.data.Mark
 import timber.log.Timber
 import java.nio.FloatBuffer
 
-class SnapEditView @JvmOverloads constructor(
+class SnapEditViewV2 @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
@@ -139,26 +139,26 @@ class SnapEditView @JvmOverloads constructor(
                     when (cornerBounds) {
                         CornerBounds.Center -> translateMatrix.postTranslate(dx, dy)
                         CornerBounds.RightBottom -> scaleMatrix.postScale(
-                            1F + (2F * (dScaleX / scaleTransformedRect.width())),
-                            1F + (2F * (dScaleY / scaleTransformedRect.height())),
+                            1F + (1F * (dScaleX / scaleTransformedRect.width())),
+                            1F + (1F * (dScaleY / scaleTransformedRect.height())),
                             scaleAnchorPoint.x,
                             scaleAnchorPoint.y
                         )
                         CornerBounds.RightTop -> scaleMatrix.postScale(
-                            1F + (2F * (dScaleX / scaleTransformedRect.width())),
-                            1F - (2F * (dScaleY / scaleTransformedRect.height())),
+                            1F + (1F * (dScaleX / scaleTransformedRect.width())),
+                            1F - (1F * (dScaleY / scaleTransformedRect.height())),
                             scaleAnchorPoint.x,
                             scaleAnchorPoint.y
                         )
                         CornerBounds.LeftBottom -> scaleMatrix.postScale(
-                            1F - (2F * (dScaleX / scaleTransformedRect.width())),
-                            1F + (2F * (dScaleY / scaleTransformedRect.height())),
+                            1F - (1F * (dScaleX / scaleTransformedRect.width())),
+                            1F + (1F * (dScaleY / scaleTransformedRect.height())),
                             scaleAnchorPoint.x,
                             scaleAnchorPoint.y
                         )
                         CornerBounds.LeftTop -> scaleMatrix.postScale(
-                            1F - (2F * (dScaleX / scaleTransformedRect.width())),
-                            1F - (2F * (dScaleY / scaleTransformedRect.height())),
+                            1F - (1F * (dScaleX / scaleTransformedRect.width())),
+                            1F - (1F * (dScaleY / scaleTransformedRect.height())),
                             scaleAnchorPoint.x,
                             scaleAnchorPoint.y
                         )
@@ -213,22 +213,35 @@ class SnapEditView @JvmOverloads constructor(
 
                     when (cornerBounds) {
                         CornerBounds.RightBottom -> scaleAnchorPoint.set(
-                            scaleTransformedRect.centerX(),
-                            scaleTransformedRect.centerY()
+                            scaleTransformedRect.left,
+                            scaleTransformedRect.top
                         )
                         CornerBounds.RightTop -> scaleAnchorPoint.set(
-                            scaleTransformedRect.centerX(),
-                            scaleTransformedRect.centerY()
+                            scaleTransformedRect.left,
+                            scaleTransformedRect.bottom
                         )
                         CornerBounds.LeftBottom -> scaleAnchorPoint.set(
-                            scaleTransformedRect.centerX(),
-                            scaleTransformedRect.centerY()
+                            scaleTransformedRect.right,
+                            scaleTransformedRect.top
                         )
                         CornerBounds.LeftTop -> scaleAnchorPoint.set(
-                            scaleTransformedRect.centerX(),
-                            scaleTransformedRect.centerY()
+                            scaleTransformedRect.right,
+                            scaleTransformedRect.bottom
                         )
                         CornerBounds.Outside -> {
+                            // FIXME: Test type 2
+                            val diffPoint = floatArrayOf(
+                                previousAnchorPoint.x - scaleTransformedRect.centerX(),
+                                previousAnchorPoint.y - scaleTransformedRect.centerY()
+                            )
+                            Timber.i("DiffPoint: ${diffPoint[0]}, ${diffPoint[1]}")
+
+                            Matrix().apply {
+                                setRotate(rotateAngle)
+                            }.mapPoints(diffPoint)
+
+                            Timber.i("Mapped DiffPoint: ${diffPoint[0]}, ${diffPoint[1]}")
+
                             // Rotate
                             rotateAngle += 45
                             rotateMatrix.setRotate(
@@ -236,6 +249,9 @@ class SnapEditView @JvmOverloads constructor(
                                 scaleTransformedRect.centerX(),
                                 scaleTransformedRect.centerY()
                             )
+
+                            // Translate
+                            rotateMatrix.postTranslate(diffPoint[1], diffPoint[0])
 
                             previousAnchorPoint.set(scaleTransformedRect.centerX(), scaleTransformedRect.centerY())
                             Timber.i("scaleTransformedRect X: ${scaleTransformedRect.centerX()}, ${scaleTransformedRect.centerY()}")
