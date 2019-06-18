@@ -4,6 +4,9 @@ import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.RectF
 import com.haejung.snapmark.data.Mark
+import com.haejung.snapmark.extend.getBoundLinePointFloatArray
+import com.haejung.snapmark.extend.getBoundRectF
+import com.haejung.snapmark.extend.px
 import timber.log.Timber
 
 class SnapEditMark(val mark: Mark, val window: RectF) {
@@ -17,14 +20,15 @@ class SnapEditMark(val mark: Mark, val window: RectF) {
     private val drawPoints = FloatArray(16)
     private val transformedDrawPoints = FloatArray(16)
 
+    private val drawToolPoints = FloatArray(2)
+    private val transformedDrawToolPoints = FloatArray(2)
+
     private val leftTopCornerBounds = RectF()
-    private val transformedLeftTopCornerBounds = RectF()
     private val rightTopCornerBounds = RectF()
-    private val transformedRightTopCornerBounds = RectF()
     private val rightBottomCornerBounds = RectF()
-    private val transformedRightBottomCornerBounds = RectF()
     private val leftBottomCornerBounds = RectF()
-    private val transformedLeftBottomCornerBounds = RectF()
+    private val rotationBounds = RectF()
+    private val centerBounds = RectF()
 
     private lateinit var cornerBounds: CornerBounds
 
@@ -33,6 +37,7 @@ class SnapEditMark(val mark: Mark, val window: RectF) {
         object LeftBottom : CornerBounds()
         object RightTop : CornerBounds()
         object RightBottom : CornerBounds()
+        object Rotation : CornerBounds()
         object Center : CornerBounds()
         object Outside : CornerBounds()
     }
@@ -42,37 +47,30 @@ class SnapEditMark(val mark: Mark, val window: RectF) {
     }
 
     private fun setup() {
-        mark.image.let {
-            Timber.i("Image Size: ${it.width}, ${it.height}")
+        mark.image.let { bitmap ->
+            bitmap.getBoundRectF().let {
+                Timber.i("Image BoundsRectF: ${it.toShortString()}")
+                drawRectF.set(it)
+                transformedDrawRectF.set(it)
 
-            drawRectF.set(0F, 0F, it.width.toFloat(), it.height.toFloat())
-            transformedDrawRectF.set(drawRectF)
+                floatArrayOf(it.width() / 2, it.top).copyInto(drawToolPoints)
+                drawToolPoints.copyInto(transformedDrawToolPoints)
+            }
 
-            drawPoints[0] = drawRectF.left
-            drawPoints[1] = drawRectF.top
-            drawPoints[2] = drawRectF.right
-            drawPoints[3] = drawRectF.top
-            drawPoints[4] = drawRectF.right
-            drawPoints[5] = drawRectF.top
-            drawPoints[6] = drawRectF.right
-            drawPoints[7] = drawRectF.bottom
-            drawPoints[8] = drawRectF.right
-            drawPoints[9] = drawRectF.bottom
-            drawPoints[10] = drawRectF.left
-            drawPoints[11] = drawRectF.bottom
-            drawPoints[12] = drawRectF.left
-            drawPoints[13] = drawRectF.bottom
-            drawPoints[14] = drawRectF.left
-            drawPoints[15] = drawRectF.top
-            drawPoints.copyInto(transformedDrawPoints)
+            bitmap.getBoundLinePointFloatArray().let {
+                it.copyInto(drawPoints)
+                it.copyInto(transformedDrawPoints)
+            }
 
             translate(
-                window.width() / 2F - it.width / 2F,
-                window.height() / 2F - it.height / 2F
+                window.width() / 2F - bitmap.width / 2F,
+                window.height() / 2F - bitmap.height / 2F
             )
 
+            // Update
+            updateBoundsRegion(drawPoints, drawToolPoints)
             updateInvertedDrawMatrix()
-            drawMatrix.mapPoints(transformedDrawPoints, drawPoints)
+            mapTransformedByDrawMatrix()
         }
     }
 
@@ -95,17 +93,23 @@ class SnapEditMark(val mark: Mark, val window: RectF) {
         }
     }
 
-    fun actionStart(points: FloatArray) {
-        // Update inverted matrix
-        updateInvertedDrawMatrix()
+    private fun mapTransformedByDrawMatrix() {
         drawMatrix.mapRect(transformedDrawRectF, drawRectF)
+        drawMatrix.mapPoints(transformedDrawPoints, drawPoints)
+        drawMatrix.mapPoints(transformedDrawToolPoints, drawToolPoints)
+    }
+
+    fun actionStart(points: FloatArray) {
+        // FIXME: Update
+        updateInvertedDrawMatrix()
+        mapTransformedByDrawMatrix()
 
         // Invert points by inverted draw matrix
         val invertedPoints = points.copyOf()
         invertedDrawMatrix.mapPoints(invertedPoints)
 
         // Calculate corner of bounds
-        cornerBounds = getCornerBoundsByPoints(drawPoints, invertedPoints)
+        cornerBounds = getCornerBoundsByPoints(invertedPoints)
         Timber.i("RegionOfRect: $cornerBounds")
 
         when (cornerBounds) {
@@ -119,14 +123,9 @@ class SnapEditMark(val mark: Mark, val window: RectF) {
             else -> {
             }
         }
-        // Update inverted matrix
+        // Update
         updateInvertedDrawMatrix()
-        drawMatrix.mapRect(transformedDrawRectF, drawRectF)
-        drawMatrix.mapPoints(transformedDrawPoints, drawPoints)
-        drawMatrix.mapRect(transformedLeftTopCornerBounds, leftTopCornerBounds)
-        drawMatrix.mapRect(transformedRightTopCornerBounds, rightTopCornerBounds)
-        drawMatrix.mapRect(transformedRightBottomCornerBounds, rightBottomCornerBounds)
-        drawMatrix.mapRect(transformedLeftBottomCornerBounds, leftBottomCornerBounds)
+        mapTransformedByDrawMatrix()
     }
 
     fun actionMove(points: FloatArray, oldPoints: FloatArray): Boolean {
@@ -167,31 +166,48 @@ class SnapEditMark(val mark: Mark, val window: RectF) {
             )
         }
 
-        drawMatrix.mapPoints(transformedDrawPoints, drawPoints)
-        drawMatrix.mapRect(transformedLeftTopCornerBounds, leftTopCornerBounds)
-        drawMatrix.mapRect(transformedRightTopCornerBounds, rightTopCornerBounds)
-        drawMatrix.mapRect(transformedRightBottomCornerBounds, rightBottomCornerBounds)
-        drawMatrix.mapRect(transformedLeftBottomCornerBounds, leftBottomCornerBounds)
         updateInvertedDrawMatrix()
+        mapTransformedByDrawMatrix()
         return true
     }
 
     fun onDraw(canvas: Canvas, paintTools: SnapPaintTools) {
         canvas.drawBitmap(mark.image, drawMatrix, null)
-
         canvas.drawLines(transformedDrawPoints, paintTools.borderPaint)
-
-        canvas.drawRect(transformedLeftTopCornerBounds, paintTools.anchorPaint)
-        canvas.drawRect(transformedRightTopCornerBounds, paintTools.anchorPaint)
-        canvas.drawRect(transformedRightBottomCornerBounds, paintTools.anchorPaint)
-        canvas.drawRect(transformedLeftBottomCornerBounds, paintTools.anchorPaint)
+        canvas.drawBitmap(
+            paintTools.helpToolBitmap,
+            transformedDrawPoints[0] - INBOUND,
+            transformedDrawPoints[1] - INBOUND,
+            null
+        )
+        canvas.drawBitmap(
+            paintTools.helpToolBitmap,
+            transformedDrawPoints[4] - INBOUND,
+            transformedDrawPoints[5] - INBOUND,
+            null
+        )
+        canvas.drawBitmap(
+            paintTools.helpToolBitmap,
+            transformedDrawPoints[8] - INBOUND,
+            transformedDrawPoints[9] - INBOUND,
+            null
+        )
+        canvas.drawBitmap(
+            paintTools.helpToolBitmap,
+            transformedDrawPoints[12] - INBOUND,
+            transformedDrawPoints[13] - INBOUND,
+            null
+        )
+        canvas.drawBitmap(
+            paintTools.helpToolBitmap,
+            transformedDrawToolPoints[0] - INBOUND,
+            transformedDrawToolPoints[1] - INBOUND,
+            null
+        )
     }
 
-    private fun getCornerBoundsByPoints(sourcePoints: FloatArray, points: FloatArray): CornerBounds {
-        val x = points[0]
-        val y = points[1]
-
-        with(sourcePoints) {
+    private fun updateBoundsRegion(cornerBoundPoints: FloatArray, rotationBoundPoints: FloatArray) {
+        with(cornerBoundPoints) {
             leftTopCornerBounds.set(
                 this[0] - INBOUND,
                 this[1] - INBOUND,
@@ -216,21 +232,35 @@ class SnapEditMark(val mark: Mark, val window: RectF) {
                 this[12] + INBOUND,
                 this[13] + INBOUND
             )
-            val centerBounds = RectF(sourcePoints[0], sourcePoints[1], sourcePoints[8], sourcePoints[9])
+            centerBounds.set(this[0], this[1], this[8], this[9])
+        }
+        with(rotationBoundPoints) {
+            rotationBounds.set(
+                this[0] - INBOUND,
+                this[1] - INBOUND,
+                this[0] + INBOUND,
+                this[1] + INBOUND
+            )
+        }
+    }
 
-            return when {
-                leftTopCornerBounds.contains(x, y) -> CornerBounds.LeftTop
-                leftBottomCornerBounds.contains(x, y) -> CornerBounds.LeftBottom
-                rightTopCornerBounds.contains(x, y) -> CornerBounds.RightTop
-                rightBottomCornerBounds.contains(x, y) -> CornerBounds.RightBottom
-                centerBounds.contains(x, y) -> CornerBounds.Center
-                else -> CornerBounds.Outside
-            }
+    private fun getCornerBoundsByPoints(points: FloatArray): CornerBounds {
+        val x = points[0]
+        val y = points[1]
+
+        return when {
+            leftTopCornerBounds.contains(x, y) -> CornerBounds.LeftTop
+            leftBottomCornerBounds.contains(x, y) -> CornerBounds.LeftBottom
+            rightTopCornerBounds.contains(x, y) -> CornerBounds.RightTop
+            rightBottomCornerBounds.contains(x, y) -> CornerBounds.RightBottom
+            rotationBounds.contains(x, y) -> CornerBounds.Rotation
+            centerBounds.contains(x, y) -> CornerBounds.Center
+            else -> CornerBounds.Outside
         }
     }
 
     companion object {
-        const val INBOUND = 30F
+        private val INBOUND: Float = 10.px.toFloat()
     }
 
 }
