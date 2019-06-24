@@ -8,8 +8,10 @@ import com.haejung.snapmark.extend.getBoundLinePointFloatArray
 import com.haejung.snapmark.extend.getBoundRectF
 import com.haejung.snapmark.extend.px
 import timber.log.Timber
+import kotlin.math.PI
+import kotlin.math.atan2
 
-class SnapEditMark(val mark: Mark, val window: RectF) {
+class SnapEditMark(val mark: Mark, private val window: RectF) {
 
     private val drawMatrix = Matrix()
     private val invertedDrawMatrix = Matrix()
@@ -53,7 +55,7 @@ class SnapEditMark(val mark: Mark, val window: RectF) {
                 drawRectF.set(it)
                 transformedDrawRectF.set(it)
 
-                floatArrayOf(it.width() / 2, it.top).copyInto(drawToolPoints)
+                floatArrayOf(it.width() / 2, it.top - it.height() / 4).copyInto(drawToolPoints)
                 drawToolPoints.copyInto(transformedDrawToolPoints)
             }
 
@@ -128,6 +130,8 @@ class SnapEditMark(val mark: Mark, val window: RectF) {
         mapTransformedByDrawMatrix()
     }
 
+    private var rotateValue = 0.0
+
     fun actionMove(points: FloatArray, oldPoints: FloatArray): Boolean {
         if (cornerBounds == CornerBounds.Outside) return false
 
@@ -140,6 +144,18 @@ class SnapEditMark(val mark: Mark, val window: RectF) {
         when (cornerBounds) {
             CornerBounds.Center ->
                 translate(points[0] - oldPoints[0], points[1] - oldPoints[1])
+            CornerBounds.Rotation -> {
+                val dpx = points[0] - transformedDrawRectF.centerX()
+                val dpy = points[1] - transformedDrawRectF.centerY() + Float.MIN_VALUE
+                var radian = atan2(dpx.toDouble(), -dpy.toDouble())
+                if (radian < 0.0) radian += PI2
+                val degree = radian * RAD2DEG
+                Timber.i("Degree: $degree")
+
+                val diffValue = degree - rotateValue
+                rotate(diffValue.toFloat() , transformedDrawRectF.centerX(), transformedDrawRectF.centerY())
+                rotateValue = degree
+            }
             CornerBounds.RightBottom -> scale(
                 1F + (2F * (dScaleX / drawRectF.width())),
                 1F + (2F * (dScaleY / drawRectF.height())),
@@ -176,32 +192,32 @@ class SnapEditMark(val mark: Mark, val window: RectF) {
         canvas.drawLines(transformedDrawPoints, paintTools.borderPaint)
         canvas.drawBitmap(
             paintTools.helpToolBitmap,
-            transformedDrawPoints[0] - INBOUND,
-            transformedDrawPoints[1] - INBOUND,
+            transformedDrawPoints[0] - paintTools.helpToolBitmapOffset,
+            transformedDrawPoints[1] - paintTools.helpToolBitmapOffset,
             null
         )
         canvas.drawBitmap(
             paintTools.helpToolBitmap,
-            transformedDrawPoints[4] - INBOUND,
-            transformedDrawPoints[5] - INBOUND,
+            transformedDrawPoints[4] - paintTools.helpToolBitmapOffset,
+            transformedDrawPoints[5] - paintTools.helpToolBitmapOffset,
             null
         )
         canvas.drawBitmap(
             paintTools.helpToolBitmap,
-            transformedDrawPoints[8] - INBOUND,
-            transformedDrawPoints[9] - INBOUND,
+            transformedDrawPoints[8] - paintTools.helpToolBitmapOffset,
+            transformedDrawPoints[9] - paintTools.helpToolBitmapOffset,
             null
         )
         canvas.drawBitmap(
             paintTools.helpToolBitmap,
-            transformedDrawPoints[12] - INBOUND,
-            transformedDrawPoints[13] - INBOUND,
+            transformedDrawPoints[12] - paintTools.helpToolBitmapOffset,
+            transformedDrawPoints[13] - paintTools.helpToolBitmapOffset,
             null
         )
         canvas.drawBitmap(
             paintTools.helpToolBitmap,
-            transformedDrawToolPoints[0] - INBOUND,
-            transformedDrawToolPoints[1] - INBOUND,
+            transformedDrawToolPoints[0] - paintTools.helpToolBitmapOffset,
+            transformedDrawToolPoints[1] - paintTools.helpToolBitmapOffset,
             null
         )
     }
@@ -260,6 +276,8 @@ class SnapEditMark(val mark: Mark, val window: RectF) {
     }
 
     companion object {
+        private const val PI2: Double = PI * 2.0
+        private const val RAD2DEG: Double = 180.0 / PI
         private val INBOUND: Float = 10.px.toFloat()
     }
 

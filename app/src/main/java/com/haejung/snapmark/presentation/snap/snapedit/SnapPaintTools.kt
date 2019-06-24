@@ -33,6 +33,9 @@ class SnapPaintTools(context: Context) {
             }
         }
 
+    val helpToolBitmapOffset: Int
+        get() = helpToolRadius
+
     val borderPaint: Paint
         get() = _borderPaint
 
@@ -43,7 +46,7 @@ class SnapPaintTools(context: Context) {
         get() = _helpToolBitmap
 
     companion object {
-        private val helpToolRadius = 10.px
+        private val helpToolRadius = 3.px
         private val helpToolDiameter = helpToolRadius * 2
     }
 
