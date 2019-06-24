@@ -1,17 +1,18 @@
 package com.haejung.snapmark.presentation.snap.snapedit
 
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.RectF
-import com.haejung.snapmark.data.Mark
 import com.haejung.snapmark.extend.getBoundLinePointFloatArray
 import com.haejung.snapmark.extend.getBoundRectF
 import com.haejung.snapmark.extend.px
 import timber.log.Timber
 import kotlin.math.PI
 import kotlin.math.atan2
+import kotlin.math.min
 
-class SnapEditMark(val mark: Mark, private val window: RectF) {
+class SnapEditImage(val image: Bitmap, private val window: RectF) {
 
     private val drawMatrix = Matrix()
     private val invertedDrawMatrix = Matrix()
@@ -45,11 +46,7 @@ class SnapEditMark(val mark: Mark, private val window: RectF) {
     }
 
     init {
-        setup()
-    }
-
-    private fun setup() {
-        mark.image.let { bitmap ->
+        image.let { bitmap ->
             bitmap.getBoundRectF().let {
                 Timber.i("Image BoundsRectF: ${it.toShortString()}")
                 drawRectF.set(it)
@@ -63,6 +60,10 @@ class SnapEditMark(val mark: Mark, private val window: RectF) {
                 it.copyInto(drawPoints)
                 it.copyInto(transformedDrawPoints)
             }
+
+            val bitmapWidth = bitmap.width.toFloat()
+            val scaleFactor = min(window.width() / 3F, bitmapWidth) / bitmapWidth
+            scale(scaleFactor, scaleFactor, bitmap.width / 2F, bitmap.height / 2F)
 
             translate(
                 window.width() / 2F - bitmap.width / 2F,
@@ -102,9 +103,7 @@ class SnapEditMark(val mark: Mark, private val window: RectF) {
     }
 
     fun actionStart(points: FloatArray) {
-        // FIXME: Update
         updateInvertedDrawMatrix()
-        mapTransformedByDrawMatrix()
 
         // Invert points by inverted draw matrix
         val invertedPoints = points.copyOf()
@@ -113,21 +112,6 @@ class SnapEditMark(val mark: Mark, private val window: RectF) {
         // Calculate corner of bounds
         cornerBounds = getCornerBoundsByPoints(invertedPoints)
         Timber.i("RegionOfRect: $cornerBounds")
-
-        when (cornerBounds) {
-            CornerBounds.Outside -> {
-                rotate(
-                    10F,
-                    transformedDrawRectF.centerX(),
-                    transformedDrawRectF.centerY()
-                )
-            }
-            else -> {
-            }
-        }
-        // Update
-        updateInvertedDrawMatrix()
-        mapTransformedByDrawMatrix()
     }
 
     private var rotateValue = 0.0
@@ -153,7 +137,7 @@ class SnapEditMark(val mark: Mark, private val window: RectF) {
                 Timber.i("Degree: $degree")
 
                 val diffValue = degree - rotateValue
-                rotate(diffValue.toFloat() , transformedDrawRectF.centerX(), transformedDrawRectF.centerY())
+                rotate(diffValue.toFloat(), transformedDrawRectF.centerX(), transformedDrawRectF.centerY())
                 rotateValue = degree
             }
             CornerBounds.RightBottom -> scale(
@@ -188,7 +172,7 @@ class SnapEditMark(val mark: Mark, private val window: RectF) {
     }
 
     fun onDraw(canvas: Canvas, paintTools: SnapPaintTools) {
-        canvas.drawBitmap(mark.image, drawMatrix, null)
+        canvas.drawBitmap(image, drawMatrix, null)
         canvas.drawLines(transformedDrawPoints, paintTools.borderPaint)
         canvas.drawBitmap(
             paintTools.helpToolBitmap,

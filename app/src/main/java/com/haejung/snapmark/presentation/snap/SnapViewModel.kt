@@ -1,6 +1,5 @@
 package com.haejung.snapmark.presentation.snap
 
-import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -31,13 +30,13 @@ class SnapViewModel(
     val openGalleryEvent: LiveData<Event<Unit>>
         get() = _openGalleryEvent
 
+    private val _saveTargetImageEvent = MutableLiveData<Event<Unit>>()
+    val saveTargetImageEvent: LiveData<Event<Unit>>
+        get() = _saveTargetImageEvent
+
     private val _markLoadedEvent = MutableLiveData<Event<Mark>>()
     val markLoadedEvent: LiveData<Event<Mark>>
         get() = _markLoadedEvent
-
-    private val _imageTargetSource = MutableLiveData<Uri>()
-    val imageTargetSource: LiveData<Uri>
-        get() = _imageTargetSource
 
     override fun onCleared() {
         disposable.clear()
@@ -77,8 +76,8 @@ class SnapViewModel(
         _openGalleryEvent.value = Event(Unit)
     }
 
-    fun setImageTargetSource(source: Uri) {
-        _imageTargetSource.value = source
+    fun saveTargetImageWithMark() {
+        _saveTargetImageEvent.value = Event(Unit)
     }
 
 }

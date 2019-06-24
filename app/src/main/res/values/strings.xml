@@ -31,5 +31,9 @@
 
   <!-- Snap -->
   <string name="title_gallery_picking_multi_images">Select one or more pictures</string>
+  <string name="title_dialog_permission_title">Required Permission</string>
+  <string name="title_dialog_permission_write_external_storage">Write external storage permission required for saving
+    images with mark
+  </string>
 
 </resources>
