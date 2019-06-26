@@ -8,6 +8,8 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import com.haejung.snapmark.data.Mark
+import io.reactivex.Completable
+import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
@@ -17,29 +19,35 @@ class SnapEditView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
 
     private val paintTools = SnapPaintTools(context)
-    private var snapEditImage: SnapEditImage? = null
     private var oldPoints = floatArrayOf()
+    private var snapEditImage: SnapEditImage? = null
+    private var snapAutoScaleImage: SnapAutoScaleImage? = null
+
+    private val windowRectF: RectF
+        get() = RectF(0F, 0F, width.toFloat(), height.toFloat())
 
     var mark: Mark? = null
         set(value) {
             field = value
-            value?.let { snapEditImage = SnapEditImage(it.image, getWindowRectF()) }
+            value?.let { snapEditImage = SnapEditImage(it.image, windowRectF) }
         }
     var targetImage: Bitmap? = null
+        set(value) {
+            field = value
+            value?.let { snapAutoScaleImage = SnapAutoScaleImage(it, windowRectF) }
+        }
 
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
         canvas?.let {
-            targetImage?.let { target ->
-                it.drawBitmap(
-                    target,
-                    null,
-                    getWindowRectF(),
-                    null
-                )
-            }
+            snapAutoScaleImage?.onDraw(it, paintTools)
             snapEditImage?.onDraw(it, paintTools)
         }
+    }
+
+    private fun drawForExtract(canvas: Canvas) {
+        snapAutoScaleImage?.onDraw(canvas)
+        snapEditImage?.onDraw(canvas)
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
@@ -67,26 +75,30 @@ class SnapEditView @JvmOverloads constructor(
         return super.onTouchEvent(event)
     }
 
-    fun extractBitmap() =
+    private fun extractBitmap(): Bitmap =
         Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
-            draw(Canvas(this))
+            drawForExtract(Canvas(this))
         }
 
     fun save(path: String) {
         Timber.i("Save: $path")
         File(path).let {
-            if(it.exists()) {
+            if (it.exists()) {
                 it.delete()
             }
 
-            FileOutputStream(it).apply {
-                extractBitmap().compress(Bitmap.CompressFormat.PNG, 100, this)
-                flush()
-            }.close()
+            Completable.fromCallable {
+                val extractedBitmap = extractBitmap()
+                FileOutputStream(it).apply {
+                    extractedBitmap.compress(Bitmap.CompressFormat.PNG, 100, this)
+                    flush()
+                }.close()
+                extractedBitmap.recycle()
+            }
+                .subscribeOn(Schedulers.io())
+                .doOnComplete { Timber.i("Saved image") }
+                .subscribe()
         }
     }
-
-    private fun getWindowRectF() =
-        RectF(0F, 0F, width.toFloat(), height.toFloat())
 
 }

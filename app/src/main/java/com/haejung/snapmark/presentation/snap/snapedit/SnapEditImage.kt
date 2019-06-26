@@ -206,6 +206,10 @@ class SnapEditImage(val image: Bitmap, private val window: RectF) {
         )
     }
 
+    fun onDraw(canvas: Canvas) {
+        canvas.drawBitmap(image, drawMatrix, null)
+    }
+
     private fun updateBoundsRegion(cornerBoundPoints: FloatArray, rotationBoundPoints: FloatArray) {
         with(cornerBoundPoints) {
             leftTopCornerBounds.set(

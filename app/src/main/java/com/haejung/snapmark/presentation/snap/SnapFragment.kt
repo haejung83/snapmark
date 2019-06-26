@@ -15,7 +15,6 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.os.EnvironmentCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -31,6 +30,8 @@ import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_TYPE_
 import kotlinx.android.synthetic.main.snap_fragment.*
 import timber.log.Timber
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 class SnapFragment : Fragment() {
 
@@ -116,7 +117,13 @@ class SnapFragment : Fragment() {
     private fun saveTargetImageWithMark() {
         Timber.i("saveTargetImageWithMark")
         if (checkPermission()) {
-            val path = Environment.getExternalStorageDirectory().absolutePath + File.separator + Environment.DIRECTORY_PICTURES + "/test.png"
+            val date = Date(System.currentTimeMillis()).let {
+                SimpleDateFormat.getDateTimeInstance().format(it)
+            }
+            val path = Environment.getExternalStorageDirectory().absolutePath +
+                    File.separator +
+                    Environment.DIRECTORY_PICTURES +
+                    "/Snap_$date.png"
             snapEditView.save(path)
         }
     }
@@ -168,7 +175,7 @@ class SnapFragment : Fragment() {
 
     companion object {
         private const val REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE = 100
-        const val REQUEST_PICK_MULTI_IMAGE = 2
+        const val REQUEST_PICK_MULTI_IMAGE = 200
 
         fun newInstance() = SnapFragment()
     }
