@@ -11,47 +11,35 @@
   </data>
 
   <androidx.constraintlayout.widget.ConstraintLayout
-      android:id="@+id/snap"
+      android:id="@+id/container_layout"
       android:layout_width="match_parent"
       android:layout_height="match_parent"
-      android:background="@color/colorAccent"
       tools:context=".presentation.snap.SnapFragment">
 
     <com.haejung.snapmark.presentation.snap.snapedit.SnapEditView
-        android:id="@+id/snapEditView"
+        android:id="@+id/snap_edit_view"
         android:layout_width="0dp"
         android:layout_height="270dp"
-        android:layout_margin="8dp"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/recycler_view"
         app:layout_constraintBottom_toBottomOf="parent"
-    />
+        android:layout_margin="8dp"
+        android:background="@color/colorPrimary"/>
 
-    <com.google.android.material.button.MaterialButton
-        style="@style/Widget.Shrine.Button"
-        android:id="@+id/buttonOpenGallery"
-        android:text="@string/title_open"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view"
+        android:layout_width="0dp"
+        android:layout_height="130dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         android:layout_marginTop="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginBottom="8dp"
-        android:onClick="@{() -> viewmodel.openGalleryForPicking()}"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/snapEditView"/>
-
-    <com.google.android.material.button.MaterialButton
-        style="@style/Widget.Shrine.Button"
-        android:id="@+id/saveTargetImage"
-        android:text="@string/title_save"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        android:onClick="@{() -> viewmodel.saveTargetImageWithMark()}"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/snapEditView"/>
+        android:orientation="horizontal"
+        android:background="@color/colorPrimary"/>
+
   </androidx.constraintlayout.widget.ConstraintLayout>
 
 </layout>

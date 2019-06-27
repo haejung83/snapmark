@@ -4,12 +4,13 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.RectF
+import android.net.Uri
+import android.provider.MediaStore
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import com.haejung.snapmark.data.Mark
-import io.reactivex.Completable
-import io.reactivex.schedulers.Schedulers
+import com.haejung.snapmark.presentation.snap.Snap
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
@@ -26,16 +27,30 @@ class SnapEditView @JvmOverloads constructor(
     private val windowRectF: RectF
         get() = RectF(0F, 0F, width.toFloat(), height.toFloat())
 
+    var snap: Snap? = null
+        set(value) {
+            field = value
+            value?.let {
+                snapEditImage?.drawMatrix = it.markMatrix
+                snapAutoScaleImage?.dispose()
+                snapAutoScaleImage =
+                    SnapAutoScaleImage(
+                        getBitmapFromUri(it.targetImage), windowRectF
+                    )
+            }
+        }
+
     var mark: Mark? = null
         set(value) {
             field = value
-            value?.let { snapEditImage = SnapEditImage(it.image, windowRectF) }
+            value?.let {
+                snapEditImage?.dispose()
+                snapEditImage = SnapEditImage(it.image, windowRectF)
+            }
         }
-    var targetImage: Bitmap? = null
-        set(value) {
-            field = value
-            value?.let { snapAutoScaleImage = SnapAutoScaleImage(it, windowRectF) }
-        }
+
+    private fun getBitmapFromUri(uri: Uri) =
+        MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
 
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
@@ -80,24 +95,16 @@ class SnapEditView @JvmOverloads constructor(
             drawForExtract(Canvas(this))
         }
 
-    fun save(path: String) {
-        Timber.i("Save: $path")
-        File(path).let {
-            if (it.exists()) {
-                it.delete()
-            }
-
-            Completable.fromCallable {
-                val extractedBitmap = extractBitmap()
-                FileOutputStream(it).apply {
-                    extractedBitmap.compress(Bitmap.CompressFormat.PNG, 100, this)
-                    flush()
-                }.close()
-                extractedBitmap.recycle()
-            }
-                .subscribeOn(Schedulers.io())
-                .doOnComplete { Timber.i("Saved image") }
-                .subscribe()
+    fun save(targetSavePath: String) {
+        Timber.i("Save: $targetSavePath")
+        File(targetSavePath).let {
+            if (it.exists()) it.delete()
+            val extractedBitmap = extractBitmap()
+            FileOutputStream(it).apply {
+                extractedBitmap.compress(Bitmap.CompressFormat.PNG, 100, this)
+                flush()
+            }.close()
+            extractedBitmap.recycle()
         }
     }
 

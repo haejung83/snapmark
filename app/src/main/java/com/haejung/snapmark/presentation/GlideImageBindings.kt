@@ -7,7 +7,7 @@ import com.bumptech.glide.Glide
 
 object GlideImageBindings {
 
-    @BindingAdapter("app:glideImage")
+    @BindingAdapter("glideImage")
     @JvmStatic
     fun loadImage(view: ImageView, source: Any?) {
         source?.let {
@@ -15,7 +15,7 @@ object GlideImageBindings {
         }
     }
 
-    @BindingAdapter("app:glideImageUrl")
+    @BindingAdapter("glideImageUrl")
     @JvmStatic
     fun loadImageByUrl(view: ImageView, url: String?) {
         url?.let {
@@ -23,7 +23,7 @@ object GlideImageBindings {
         }
     }
 
-    @BindingAdapter("app:glideImageBitmap")
+    @BindingAdapter("glideImageBitmap")
     @JvmStatic
     fun loadImageByBitmap(view: ImageView, bitmap: Bitmap?) {
         bitmap?.let {

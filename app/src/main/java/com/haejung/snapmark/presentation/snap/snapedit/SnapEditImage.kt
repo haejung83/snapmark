@@ -12,9 +12,18 @@ import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.min
 
-class SnapEditImage(val image: Bitmap, private val window: RectF) {
+class SnapEditImage(image: Bitmap, window: RectF) : SnapImage(image, window) {
 
-    private val drawMatrix = Matrix()
+    var drawMatrix = Matrix()
+        set(value) {
+            field = value
+            if (field.isIdentity) {
+                initMatrixWithImage()
+            } else {
+                Timber.i("None identity")
+            }
+        }
+
     private val invertedDrawMatrix = Matrix()
 
     private val drawRectF = RectF()
@@ -33,6 +42,8 @@ class SnapEditImage(val image: Bitmap, private val window: RectF) {
     private val rotationBounds = RectF()
     private val centerBounds = RectF()
 
+    private var rotateValue = 0.0
+
     private lateinit var cornerBounds: CornerBounds
 
     sealed class CornerBounds {
@@ -46,6 +57,10 @@ class SnapEditImage(val image: Bitmap, private val window: RectF) {
     }
 
     init {
+        initMatrixWithImage()
+    }
+
+    private fun initMatrixWithImage() {
         image.let { bitmap ->
             bitmap.getBoundRectF().let {
                 Timber.i("Image BoundsRectF: ${it.toShortString()}")
@@ -113,8 +128,6 @@ class SnapEditImage(val image: Bitmap, private val window: RectF) {
         cornerBounds = getCornerBoundsByPoints(invertedPoints)
         Timber.i("RegionOfRect: $cornerBounds")
     }
-
-    private var rotateValue = 0.0
 
     fun actionMove(points: FloatArray, oldPoints: FloatArray): Boolean {
         if (cornerBounds == CornerBounds.Outside) return false

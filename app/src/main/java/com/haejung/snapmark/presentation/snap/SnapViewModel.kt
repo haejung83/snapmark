@@ -1,12 +1,15 @@
 package com.haejung.snapmark.presentation.snap
 
+import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.haejung.snapmark.R
 import com.haejung.snapmark.data.Mark
 import com.haejung.snapmark.data.source.repository.MarkPresetRepository
 import com.haejung.snapmark.data.source.repository.MarkRepository
 import com.haejung.snapmark.presentation.Event
+import io.reactivex.Completable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
@@ -26,17 +29,13 @@ class SnapViewModel(
     val snackbarMessage: LiveData<Event<Int>>
         get() = _snackbarMessage
 
-    private val _openGalleryEvent = MutableLiveData<Event<Unit>>()
-    val openGalleryEvent: LiveData<Event<Unit>>
-        get() = _openGalleryEvent
-
-    private val _saveTargetImageEvent = MutableLiveData<Event<Unit>>()
-    val saveTargetImageEvent: LiveData<Event<Unit>>
-        get() = _saveTargetImageEvent
-
     private val _markLoadedEvent = MutableLiveData<Event<Mark>>()
     val markLoadedEvent: LiveData<Event<Mark>>
         get() = _markLoadedEvent
+
+    private val _snapList = MutableLiveData<List<Snap>>().apply { value = emptyList() }
+    val snapList: LiveData<List<Snap>>
+        get() = _snapList
 
     override fun onCleared() {
         disposable.clear()
@@ -72,12 +71,23 @@ class SnapViewModel(
             .addTo(disposable)
     }
 
-    fun openGalleryForPicking() {
-        _openGalleryEvent.value = Event(Unit)
+    fun addImageTargets(imageTargets: List<Uri>) {
+        val oldSnapList = _snapList.value ?: emptyList()
+        _snapList.value = mutableListOf(*oldSnapList.toTypedArray()).apply {
+            addAll(imageTargets.map { image -> Snap(image) })
+        }
     }
 
-    fun saveTargetImageWithMark() {
-        _saveTargetImageEvent.value = Event(Unit)
+    fun saveSnapImage(completableSnapImage: Completable) {
+        completableSnapImage
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                _snackbarMessage.value = Event(R.string.title_snackbar_msg_save_snap_image_success)
+            }, {
+                _snackbarMessage.value = Event(R.string.title_snackbar_msg_save_snap_image_fail)
+            })
+            .addTo(disposable)
     }
 
 }

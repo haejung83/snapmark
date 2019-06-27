@@ -1,11 +1,12 @@
 package com.haejung.snapmark.presentation.snap.snapedit
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.RectF
 import com.haejung.snapmark.extend.getBoundRectF
 
-class SnapAutoScaleImage(val image: Bitmap, private val window: RectF) {
+class SnapAutoScaleImage(image: Bitmap, window: RectF) : SnapImage(image, window) {
 
     private val drawRectF = RectF()
 
@@ -13,6 +14,7 @@ class SnapAutoScaleImage(val image: Bitmap, private val window: RectF) {
         drawRectF.set(getCenterFitRectF(image.getBoundRectF(), window))
     }
 
+    @Suppress("UNUSED_PARAMETER")
     fun onDraw(canvas: Canvas, paintTools: SnapPaintTools) {
         canvas.drawBitmap(image, null, drawRectF, null)
     }

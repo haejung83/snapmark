@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+  <item
+      android:id="@+id/add_image_from_gallery"
+      android:icon="@drawable/ic_add_circle_black_24dp"
+      android:title="@string/title_add_images"
+      app:showAsAction="ifRoom"/>
+
+  <item
+      android:id="@+id/save_snap_image"
+      android:icon="@drawable/ic_save_black_24dp"
+      android:title="@string/title_save"
+      app:showAsAction="ifRoom"/>
+
+</menu>

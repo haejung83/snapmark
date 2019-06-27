@@ -2,16 +2,15 @@ package com.haejung.snapmark.presentation.snap
 
 import android.Manifest
 import android.app.Activity
+import android.content.ClipData
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
-import android.provider.MediaStore
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.os.Environment.DIRECTORY_PICTURES
+import android.os.Environment.getExternalStorageDirectory
+import android.view.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -27,6 +26,7 @@ import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_ID
 import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_TYPE
 import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_TYPE_MARK
 import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_TYPE_PRESET
+import io.reactivex.Completable
 import kotlinx.android.synthetic.main.snap_fragment.*
 import timber.log.Timber
 import java.io.File
@@ -44,17 +44,17 @@ class SnapFragment : Fragment() {
         viewDataBinding = SnapFragmentBinding.inflate(inflater, container, false).apply {
             viewmodel = (activity as AppCompatActivity).obtainViewModel(SnapViewModel::class.java).also {
                 // Bind here
-                it.openGalleryEvent.observe(this@SnapFragment, Observer { event ->
-                    event.getContentIfNotHandled()?.let { openGallery() }
-                })
-                it.saveTargetImageEvent.observe(this@SnapFragment, Observer { event ->
-                    event.getContentIfNotHandled()?.let { saveTargetImageWithMark() }
-                })
                 it.markLoadedEvent.observe(this@SnapFragment, Observer { event ->
                     event.getContentIfNotHandled()?.let { mark -> snapEditView.mark = mark }
                 })
+                it.snapList.observe(this@SnapFragment, Observer { snapList ->
+                    Timber.i("Observe Snap List: ${snapList.size}")
+                    if (snapList.isNotEmpty())
+                        snapEditView.snap = snapList.last()
+                })
             }
         }
+        setHasOptionsMenu(true)
         return viewDataBinding.root
     }
 
@@ -67,6 +67,19 @@ class SnapFragment : Fragment() {
                 it, Snackbar.LENGTH_SHORT
             )
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.snap_edit_menu, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.add_image_from_gallery -> openGallery()
+            R.id.save_snap_image -> saveSnapImage()
+            else -> return super.onOptionsItemSelected(item)
+        }
+        return true
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -85,21 +98,22 @@ class SnapFragment : Fragment() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
             REQUEST_PICK_MULTI_IMAGE -> {
-                data?.let {
-                    Timber.d("onActivityResult: ${data.data} or ${data.clipData}")
-                    data.data?.let { setImageTargetSource(it) }
-                    data.clipData?.let { setImageTargetSource(it.getItemAt(0).uri) }
+                if (resultCode == Activity.RESULT_OK) {
+                    data?.let {
+                        Timber.d("onActivityResult: ${data.data} or ${data.clipData}")
+                        data.data?.let { viewDataBinding.viewmodel?.addImageTargets(listOf(it)) }
+                        data.clipData?.let { viewDataBinding.viewmodel?.addImageTargets(getUrisFromClipData(it)) }
+                    }
+                    viewDataBinding.viewmodel?.handleActivityResult(requestCode, resultCode)
                 }
-                viewDataBinding.viewmodel?.handleActivityResult(requestCode, resultCode)
             }
+            else -> super.onActivityResult(requestCode, resultCode, data)
         }
     }
 
-    private fun setImageTargetSource(source: Uri) {
-        val targetImageBitmap = MediaStore.Images.Media.getBitmap(activity?.contentResolver, source)
-        targetImageBitmap?.let {
-            snapEditView.targetImage = it
-        }
+    private fun getUrisFromClipData(clipData: ClipData) = mutableListOf<Uri>().apply {
+        for (index in 0 until clipData.itemCount)
+            add(clipData.getItemAt(index).uri)
     }
 
     private fun openGallery() {
@@ -114,17 +128,16 @@ class SnapFragment : Fragment() {
         )
     }
 
-    private fun saveTargetImageWithMark() {
-        Timber.i("saveTargetImageWithMark")
+    private fun saveSnapImage() {
         if (checkPermission()) {
             val date = Date(System.currentTimeMillis()).let {
                 SimpleDateFormat.getDateTimeInstance().format(it)
             }
-            val path = Environment.getExternalStorageDirectory().absolutePath +
-                    File.separator +
-                    Environment.DIRECTORY_PICTURES +
-                    "/Snap_$date.png"
-            snapEditView.save(path)
+            viewDataBinding.viewmodel?.saveSnapImage(
+                Completable.fromCallable {
+                    snap_edit_view.save("$SAVE_IMAGE_ROOT_PATH/Snap_$date.png")
+                }
+            )
         }
     }
 
@@ -154,7 +167,7 @@ class SnapFragment : Fragment() {
         when (requestCode) {
             REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE ->
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    saveTargetImageWithMark()
+                    saveSnapImage()
                 }
             else ->
                 super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -162,7 +175,7 @@ class SnapFragment : Fragment() {
     }
 
     private fun showPermissionRationaleDialog(activity: Activity, required: String) {
-        val buttonHandler = DialogInterface.OnClickListener { dialog, which ->
+        val buttonHandler = DialogInterface.OnClickListener { dialog, _ ->
             requestSinglePermission(activity, required)
             dialog.dismiss()
         }
@@ -176,6 +189,8 @@ class SnapFragment : Fragment() {
     companion object {
         private const val REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE = 100
         const val REQUEST_PICK_MULTI_IMAGE = 200
+        private val SAVE_IMAGE_ROOT_PATH: String =
+            getExternalStorageDirectory().absolutePath + File.separator + DIRECTORY_PICTURES
 
         fun newInstance() = SnapFragment()
     }

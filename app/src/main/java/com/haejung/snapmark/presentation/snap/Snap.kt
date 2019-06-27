@@ -1,9 +1,6 @@
 package com.haejung.snapmark.presentation.snap
 
-import android.graphics.Bitmap
-import com.haejung.snapmark.data.Mark
+import android.graphics.Matrix
+import android.net.Uri
 
-data class Snap(
-    val mark: Mark,
-    val image: Bitmap
-)
+data class Snap(val targetImage: Uri, val markMatrix: Matrix = Matrix())

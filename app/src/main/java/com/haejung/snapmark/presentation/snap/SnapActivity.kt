@@ -5,6 +5,7 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import com.haejung.snapmark.R
 import com.haejung.snapmark.extend.replaceFragmentInActivity
+import com.haejung.snapmark.extend.setupActionBar
 
 
 class SnapActivity : AppCompatActivity() {
@@ -17,20 +18,30 @@ class SnapActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.snap_activity)
 
-        replaceFragmentInActivity(snapFragment.apply {
-            // Extract extra from Intent
-            intent?.extras?.let { arguments = it }
-        }, R.id.container)
+        setupActionBar(R.id.toolbar) {
+            setHomeAsUpIndicator(R.drawable.ic_backspace_black_24dp)
+            setDisplayHomeAsUpEnabled(true)
+        }
+        setupViewFragment()
     }
 
-    override fun onOptionsItemSelected(item: MenuItem) =
+    private fun setupViewFragment() {
+        replaceFragmentInActivity(
+            snapFragment.apply {
+                // Extract extra from Intent
+                intent?.extras?.let { arguments = it }
+            },
+            R.id.container_fragment
+        )
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            android.R.id.home -> {
-                finish()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
+            android.R.id.home -> finish()
+            else -> return super.onOptionsItemSelected(item)
         }
+        return true
+    }
 
     companion object {
         internal const val EXTRA_TYPE = "extra_type"
