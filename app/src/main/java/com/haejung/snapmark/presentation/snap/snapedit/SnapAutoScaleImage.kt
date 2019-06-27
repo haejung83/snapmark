@@ -1,6 +1,5 @@
 package com.haejung.snapmark.presentation.snap.snapedit
 
-import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.RectF

@@ -6,6 +6,8 @@ import android.content.ClipData
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.MediaScannerConnection
+import android.media.MediaScannerConnection.MediaScannerConnectionClient
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment.DIRECTORY_PICTURES
@@ -35,6 +37,7 @@ import java.util.*
 
 class SnapFragment : Fragment() {
 
+    private lateinit var mediaScanner: MediaScannerConnection
     private lateinit var viewDataBinding: SnapFragmentBinding
 
     override fun onCreateView(
@@ -67,19 +70,16 @@ class SnapFragment : Fragment() {
                 it, Snackbar.LENGTH_SHORT
             )
         }
-    }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.snap_edit_menu, menu)
-    }
+        // Media Scanner
+        mediaScanner =
+            MediaScannerConnection(view.context, object : MediaScannerConnectionClient {
+                override fun onMediaScannerConnected() {
+                }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.add_image_from_gallery -> openGallery()
-            R.id.save_snap_image -> saveSnapImage()
-            else -> return super.onOptionsItemSelected(item)
-        }
-        return true
+                override fun onScanCompleted(path: String?, uri: Uri?) {
+                }
+            }).apply { connect() }
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -93,6 +93,11 @@ class SnapFragment : Fragment() {
                 else -> Timber.w("No exists argument for launch SnapFragment")
             }
         }
+    }
+
+    override fun onDestroyView() {
+        if (mediaScanner.isConnected) mediaScanner.disconnect()
+        super.onDestroyView()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -109,6 +114,19 @@ class SnapFragment : Fragment() {
             }
             else -> super.onActivityResult(requestCode, resultCode, data)
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.snap_edit_menu, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.add_image_from_gallery -> openGallery()
+            R.id.save_snap_image -> saveSnapImage()
+            else -> return super.onOptionsItemSelected(item)
+        }
+        return true
     }
 
     private fun getUrisFromClipData(clipData: ClipData) = mutableListOf<Uri>().apply {
@@ -133,9 +151,14 @@ class SnapFragment : Fragment() {
             val date = Date(System.currentTimeMillis()).let {
                 SimpleDateFormat.getDateTimeInstance().format(it)
             }
+            val saveImageRootDir = File(SAVE_IMAGE_ROOT_PATH)
+            if (!saveImageRootDir.exists()) saveImageRootDir.mkdirs()
+
             viewDataBinding.viewmodel?.saveSnapImage(
                 Completable.fromCallable {
-                    snap_edit_view.save("$SAVE_IMAGE_ROOT_PATH/Snap_$date.png")
+                    val saveImagePath = "$SAVE_IMAGE_ROOT_PATH/Snap_$date.png"
+                    snap_edit_view.save(saveImagePath)
+                    mediaScanner.scanFile(saveImagePath, SNAP_MEDIA_TYPE)
                 }
             )
         }
@@ -187,10 +210,12 @@ class SnapFragment : Fragment() {
     }
 
     companion object {
-        private const val REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE = 100
         const val REQUEST_PICK_MULTI_IMAGE = 200
+        private const val REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE = 100
+
+        private const val SNAP_MEDIA_TYPE = "image/png"
         private val SAVE_IMAGE_ROOT_PATH: String =
-            getExternalStorageDirectory().absolutePath + File.separator + DIRECTORY_PICTURES
+            getExternalStorageDirectory().absolutePath + File.separator + DIRECTORY_PICTURES + File.separator + "SnapMark"
 
         fun newInstance() = SnapFragment()
     }
