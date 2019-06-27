@@ -1,6 +1,7 @@
 package com.haejung.snapmark.presentation
 
 import android.graphics.Bitmap
+import android.net.Uri
 import android.widget.ImageView
 import androidx.databinding.BindingAdapter
 import com.bumptech.glide.Glide
@@ -11,6 +12,14 @@ object GlideImageBindings {
     @JvmStatic
     fun loadImage(view: ImageView, source: Any?) {
         source?.let {
+            Glide.with(view).load(it).into(view)
+        }
+    }
+
+    @BindingAdapter("glideImageUri")
+    @JvmStatic
+    fun loadImageByUri(view: ImageView, uri: Uri?) {
+        uri?.let {
             Glide.with(view).load(it).into(view)
         }
     }

@@ -1,6 +1,5 @@
 package com.haejung.snapmark.presentation.snap
 
-import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -25,6 +24,10 @@ class SnapViewModel(
         CompositeDisposable()
     }
 
+    private val _snapList = MutableLiveData<List<Snap>>().apply { value = emptyList() }
+    val snapList: LiveData<List<Snap>>
+        get() = _snapList
+
     private val _snackbarMessage = MutableLiveData<Event<Int>>()
     val snackbarMessage: LiveData<Event<Int>>
         get() = _snackbarMessage
@@ -32,10 +35,6 @@ class SnapViewModel(
     private val _markLoadedEvent = MutableLiveData<Event<Mark>>()
     val markLoadedEvent: LiveData<Event<Mark>>
         get() = _markLoadedEvent
-
-    private val _snapList = MutableLiveData<List<Snap>>().apply { value = emptyList() }
-    val snapList: LiveData<List<Snap>>
-        get() = _snapList
 
     override fun onCleared() {
         disposable.clear()
@@ -71,10 +70,15 @@ class SnapViewModel(
             .addTo(disposable)
     }
 
-    fun addImageTargets(imageTargets: List<Uri>) {
+    fun addSnap(vararg snaps: Snap) {
+        val oldSnapList = _snapList.value ?: emptyList()
+        _snapList.value = mutableListOf(*oldSnapList.toTypedArray(), *snaps)
+    }
+
+    fun removeSnap(vararg snaps: Snap) {
         val oldSnapList = _snapList.value ?: emptyList()
         _snapList.value = mutableListOf(*oldSnapList.toTypedArray()).apply {
-            addAll(imageTargets.map { image -> Snap(image) })
+            for (snap in snaps) remove(snap)
         }
     }
 

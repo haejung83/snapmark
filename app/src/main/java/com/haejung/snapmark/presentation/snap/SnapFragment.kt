@@ -18,12 +18,14 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.haejung.snapmark.R
 import com.haejung.snapmark.databinding.SnapFragmentBinding
 import com.haejung.snapmark.extend.obtainViewModel
 import com.haejung.snapmark.extend.setupSnackbar
+import com.haejung.snapmark.presentation.snap.SnapActionListener.Action
 import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_ID
 import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_TYPE
 import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_TYPE_MARK
@@ -39,6 +41,7 @@ class SnapFragment : Fragment() {
 
     private lateinit var mediaScanner: MediaScannerConnection
     private lateinit var viewDataBinding: SnapFragmentBinding
+    private lateinit var snapListAdapter: SnapListAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -48,12 +51,11 @@ class SnapFragment : Fragment() {
             viewmodel = (activity as AppCompatActivity).obtainViewModel(SnapViewModel::class.java).also {
                 // Bind here
                 it.markLoadedEvent.observe(this@SnapFragment, Observer { event ->
-                    event.getContentIfNotHandled()?.let { mark -> snapEditView.mark = mark }
+                    event.getContentIfNotHandled()?.let { mark -> snap_edit_view.mark = mark }
                 })
                 it.snapList.observe(this@SnapFragment, Observer { snapList ->
                     Timber.i("Observe Snap List: ${snapList.size}")
-                    if (snapList.isNotEmpty())
-                        snapEditView.snap = snapList.last()
+                    snapListAdapter.submitList(snapList)
                 })
             }
         }
@@ -86,6 +88,11 @@ class SnapFragment : Fragment() {
         super.onActivityCreated(savedInstanceState)
         viewDataBinding.lifecycleOwner = this.viewLifecycleOwner
 
+        setupListAdapter()
+        parseArguments()
+    }
+
+    private fun parseArguments() {
         arguments?.let {
             when (it.getString(EXTRA_TYPE)) {
                 EXTRA_TYPE_MARK -> viewDataBinding.viewmodel?.initWithMarkId(it.getInt(EXTRA_ID))
@@ -106,13 +113,35 @@ class SnapFragment : Fragment() {
                 if (resultCode == Activity.RESULT_OK) {
                     data?.let {
                         Timber.d("onActivityResult: ${data.data} or ${data.clipData}")
-                        data.data?.let { viewDataBinding.viewmodel?.addImageTargets(listOf(it)) }
-                        data.clipData?.let { viewDataBinding.viewmodel?.addImageTargets(getUrisFromClipData(it)) }
+                        data.data?.let { viewDataBinding.viewmodel?.addSnap(Snap(it)) }
+                        data.clipData?.let { viewDataBinding.viewmodel?.addSnap(*getSnapsFromClipData(it).toTypedArray()) }
                     }
                     viewDataBinding.viewmodel?.handleActivityResult(requestCode, resultCode)
                 }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
+    private fun setupListAdapter() {
+        snapListAdapter = SnapListAdapter(object : SnapActionListener {
+            override fun onClick(action: Action, snap: Snap) {
+                when (action) {
+                    Action.ACTION_IMAGE_TARGET_SELECT -> {
+                        Timber.i("action select: $snap")
+                        snap_edit_view.snap = snap
+                    }
+                    Action.ACTION_IMAGE_TARGET_DELETE -> {
+                        Timber.i("action delete: $snap")
+                        viewDataBinding.viewmodel?.removeSnap(snap)
+                    }
+                }
+            }
+        })
+        viewDataBinding.viewmodel?.let {
+            viewDataBinding.recyclerView.adapter = snapListAdapter
+            viewDataBinding.recyclerView.layoutManager =
+                LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         }
     }
 
@@ -129,10 +158,11 @@ class SnapFragment : Fragment() {
         return true
     }
 
-    private fun getUrisFromClipData(clipData: ClipData) = mutableListOf<Uri>().apply {
-        for (index in 0 until clipData.itemCount)
-            add(clipData.getItemAt(index).uri)
-    }
+    private fun getSnapsFromClipData(clipData: ClipData) =
+        mutableListOf<Snap>().apply {
+            for (index in 0 until clipData.itemCount)
+                add(Snap(clipData.getItemAt(index).uri))
+        }
 
     private fun openGallery() {
         startActivityForResult(

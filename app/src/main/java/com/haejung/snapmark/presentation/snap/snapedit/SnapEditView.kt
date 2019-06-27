@@ -38,6 +38,7 @@ class SnapEditView @JvmOverloads constructor(
                         getBitmapFromUri(it.targetImage), windowRectF
                     )
             }
+            invalidate()
         }
 
     var mark: Mark? = null
@@ -47,6 +48,7 @@ class SnapEditView @JvmOverloads constructor(
                 snapEditImage?.dispose()
                 snapEditImage = SnapEditImage(it.image, windowRectF)
             }
+            invalidate()
         }
 
     private fun getBitmapFromUri(uri: Uri) =

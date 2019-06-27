@@ -19,12 +19,14 @@ import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 
 
+// TODO: Migrate to androidx.recyclerview.widget.ListAdapter
 class MarkListAdapter(
     private val viewModel: MarkViewModel
 ) : RecyclerView.Adapter<MarkListAdapter.ViewHolder>() {
 
     private val items = mutableListOf<Mark>()
 
+    // TODO: Move to outside
     private val itemClickListener = object : MarkActionListener {
         override fun onClick(action: MarkActionListener.Action, mark: Mark, view: View?) {
             when (action) {
@@ -34,6 +36,7 @@ class MarkListAdapter(
         }
     }
 
+    // TODO: Move to outside
     private fun showPopupMenu(anchor: View, mark: Mark) {
         PopupMenu(anchor.context, anchor).apply {
             menuInflater.inflate(R.menu.popup_menu_mark_item, menu)
@@ -48,6 +51,7 @@ class MarkListAdapter(
         }.show()
     }
 
+    // TODO: Move to outside
     private fun showRemoveConfirmDialog(context: Context, mark: Mark) {
         val buttonHandler = DialogInterface.OnClickListener { dialog, which ->
             when (which) {

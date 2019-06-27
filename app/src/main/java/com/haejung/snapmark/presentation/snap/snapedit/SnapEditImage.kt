@@ -17,11 +17,7 @@ class SnapEditImage(image: Bitmap, window: RectF) : SnapImage(image, window) {
     var drawMatrix = Matrix()
         set(value) {
             field = value
-            if (field.isIdentity) {
-                initMatrixWithImage()
-            } else {
-                Timber.i("None identity")
-            }
+            initMatrixWithImage(field.isIdentity)
         }
 
     private val invertedDrawMatrix = Matrix()
@@ -57,10 +53,10 @@ class SnapEditImage(image: Bitmap, window: RectF) : SnapImage(image, window) {
     }
 
     init {
-        initMatrixWithImage()
+        initMatrixWithImage(true)
     }
 
-    private fun initMatrixWithImage() {
+    private fun initMatrixWithImage(isIdentityMatrix: Boolean) {
         image.let { bitmap ->
             bitmap.getBoundRectF().let {
                 Timber.i("Image BoundsRectF: ${it.toShortString()}")
@@ -76,14 +72,16 @@ class SnapEditImage(image: Bitmap, window: RectF) : SnapImage(image, window) {
                 it.copyInto(transformedDrawPoints)
             }
 
-            val bitmapWidth = bitmap.width.toFloat()
-            val scaleFactor = min(window.width() / 3F, bitmapWidth) / bitmapWidth
-            scale(scaleFactor, scaleFactor, bitmap.width / 2F, bitmap.height / 2F)
+            if (isIdentityMatrix) {
+                val bitmapWidth = bitmap.width.toFloat()
+                val scaleFactor = min(window.width() / 3F, bitmapWidth) / bitmapWidth
+                scale(scaleFactor, scaleFactor, bitmap.width / 2F, bitmap.height / 2F)
 
-            translate(
-                window.width() / 2F - bitmap.width / 2F,
-                window.height() / 2F - bitmap.height / 2F
-            )
+                translate(
+                    window.width() / 2F - bitmap.width / 2F,
+                    window.height() / 2F - bitmap.height / 2F
+                )
+            }
 
             // Update
             updateBoundsRegion(drawPoints, drawToolPoints)
