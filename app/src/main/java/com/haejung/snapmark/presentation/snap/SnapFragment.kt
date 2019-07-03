@@ -10,13 +10,13 @@ import android.media.MediaScannerConnection
 import android.media.MediaScannerConnection.MediaScannerConnectionClient
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment.DIRECTORY_PICTURES
-import android.os.Environment.getExternalStorageDirectory
+import android.os.Environment
 import android.view.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.haejung.snapmark.R
@@ -31,14 +31,11 @@ import io.reactivex.Completable
 import kotlinx.android.synthetic.main.snap_fragment.*
 import timber.log.Timber
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
 
 class SnapFragment : Fragment() {
 
     private lateinit var mediaScanner: MediaScannerConnection
     private lateinit var viewDataBinding: SnapFragmentBinding
-    private lateinit var snapListAdapter: SnapListAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -48,11 +45,22 @@ class SnapFragment : Fragment() {
             viewmodel = (activity as AppCompatActivity).obtainViewModel(SnapViewModel::class.java).also {
                 // Bind Snackbar
                 root.setupSnackbar(this@SnapFragment, it.snackbarMessage, Snackbar.LENGTH_SHORT)
+                it.saveRequestEvent.observe(this@SnapFragment, Observer { event ->
+                    event.getContentIfNotHandled()?.let {
+                        saveCurrentSnapImage()
+                    }
+                })
+                it.showFinishDialogEvent.observe(this@SnapFragment, Observer { event ->
+                    event.getContentIfNotHandled()?.let {
+                        showFinishDialog()
+                    }
+                })
             }
         }
         setHasOptionsMenu(true)
         return viewDataBinding.root
     }
+
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
@@ -111,7 +119,7 @@ class SnapFragment : Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.add_image_from_gallery -> openGallery()
-            R.id.save_snap_image -> saveSnapImage()
+            R.id.save_snap_image -> saveSnapImages()
             else -> return super.onOptionsItemSelected(item)
         }
         return true
@@ -135,23 +143,37 @@ class SnapFragment : Fragment() {
         )
     }
 
-    private fun saveSnapImage() {
+    private fun saveSnapImages() {
         if (checkPermission()) {
-            // TODO: Should be moved role of handling snaps to the viewmodel
-            val date = Date(System.currentTimeMillis()).let {
-                SimpleDateFormat.getDateTimeInstance().format(it)
-            }
-            val saveImageRootDir = File(SAVE_IMAGE_ROOT_PATH)
-            if (!saveImageRootDir.exists()) saveImageRootDir.mkdirs()
-
-            viewDataBinding.viewmodel?.saveSnapImage(
-                Completable.fromCallable {
-                    val saveImagePath = "$SAVE_IMAGE_ROOT_PATH/Snap_$date.png"
-                    snap_edit_view.save(saveImagePath)
-                    mediaScanner.scanFile(saveImagePath, SNAP_MEDIA_TYPE)
-                }
-            )
+            checkAndCreateSaveImageRootDir()
+            viewDataBinding.viewmodel?.saveSnapImages()
         }
+    }
+
+    private fun checkAndCreateSaveImageRootDir() {
+        val saveImageRootDir = File(SAVE_IMAGE_ROOT_PATH)
+        if (!saveImageRootDir.exists()) saveImageRootDir.mkdirs()
+    }
+
+    // FIXME: [Saving] Freaky. Make it more elegance.
+    private fun saveCurrentSnapImage() {
+        viewDataBinding.viewmodel?.saveSnapImage(
+            Completable.fromCallable {
+                val saveImagePath = "$SAVE_IMAGE_ROOT_PATH/Snap_${System.currentTimeMillis()}.png"
+                snap_edit_view.save(saveImagePath)
+                mediaScanner.scanFile(saveImagePath, SNAP_MEDIA_TYPE)
+            }
+        )
+    }
+
+    private fun showFinishDialog() {
+        MaterialAlertDialogBuilder(context, R.style.Widget_Shrine_MaterialAlertDialog).apply {
+            setTitle(R.string.title_dialog_title_save_snap_image_finish)
+            setMessage(R.string.title_dialog_msg_save_snap_image_finish)
+            setPositiveButton(R.string.title_ok) { _, _ ->
+                activity?.finish()
+            }
+        }.show()
     }
 
     private fun checkPermission(): Boolean {
@@ -180,7 +202,7 @@ class SnapFragment : Fragment() {
         when (requestCode) {
             REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE ->
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    saveSnapImage()
+                    saveSnapImages()
                 }
             else ->
                 super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -205,7 +227,11 @@ class SnapFragment : Fragment() {
 
         private const val SNAP_MEDIA_TYPE = "image/png"
         private val SAVE_IMAGE_ROOT_PATH: String =
-            getExternalStorageDirectory().absolutePath + File.separator + DIRECTORY_PICTURES + File.separator + "SnapMark"
+            Environment.getExternalStorageDirectory().absolutePath +
+                    File.separator +
+                    Environment.DIRECTORY_PICTURES +
+                    File.separator +
+                    "SnapMark"
 
         fun newInstance() = SnapFragment()
     }

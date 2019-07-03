@@ -9,10 +9,12 @@ import com.haejung.snapmark.data.source.repository.MarkPresetRepository
 import com.haejung.snapmark.data.source.repository.MarkRepository
 import com.haejung.snapmark.presentation.Event
 import io.reactivex.Completable
+import io.reactivex.Flowable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
+import org.reactivestreams.Subscription
 import timber.log.Timber
 
 class SnapViewModel(
@@ -36,6 +38,14 @@ class SnapViewModel(
     val snapList: LiveData<List<Snap>>
         get() = _snapList
 
+    private val _saveRequestEvent = MutableLiveData<Event<Unit>>()
+    val saveRequestEvent: LiveData<Event<Unit>>
+        get() = _saveRequestEvent
+
+    private val _showFinishDialogEvent = MutableLiveData<Event<Unit>>()
+    val showFinishDialogEvent: LiveData<Event<Unit>>
+        get() = _showFinishDialogEvent
+
     private val _snackbarMessage = MutableLiveData<Event<Int>>()
     val snackbarMessage: LiveData<Event<Int>>
         get() = _snackbarMessage
@@ -54,6 +64,8 @@ class SnapViewModel(
             }
         }
     }
+
+    private var saveSubscription: Subscription? = null
 
     override fun onCleared() {
         disposable.clear()
@@ -104,14 +116,36 @@ class SnapViewModel(
         _currentSnap.value = snap
     }
 
+    // FIXME: [Saving] Freaky. Make it more elegance.
     fun saveSnapImage(completableSnapImage: Completable) {
         completableSnapImage
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
+            .subscribe {
+                Timber.i("Save one")
+                // Request next one
+                saveSubscription?.request(1)
+            }
+            .addTo(disposable)
+    }
+
+    // FIXME: [Saving] Freaky. Make it more elegance.
+    fun saveSnapImages() {
+        Flowable.fromIterable(_snapList.value)
             .subscribe({
-                _snackbarMessage.value = Event(R.string.title_snackbar_msg_save_snap_image_success)
+                currentSnap(it)
+                _saveRequestEvent.value = Event(Unit)
             }, {
+                Timber.e(it)
+                saveSubscription = null
                 _snackbarMessage.value = Event(R.string.title_snackbar_msg_save_snap_image_fail)
+            }, {
+                Timber.i("Save done")
+                saveSubscription = null
+                _showFinishDialogEvent.value = Event(Unit)
+            }, {
+                saveSubscription = it
+                it.request(1)
             })
             .addTo(disposable)
     }
