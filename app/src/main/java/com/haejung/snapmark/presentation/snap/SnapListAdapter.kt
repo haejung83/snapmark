@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.haejung.snapmark.databinding.ViewItemSnapBinding
 
 class SnapListAdapter(
-    private val snapActionListener: SnapActionListener
+    private val snapViewModel: SnapViewModel
 ) : ListAdapter<Snap, SnapListAdapter.ViewHolder>(SnapDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
@@ -19,7 +19,7 @@ class SnapListAdapter(
         )
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) =
-        holder.bind(getItem(position), snapActionListener)
+        holder.bind(getItem(position), snapViewModel.snapActionListener)
 
     class ViewHolder(
         private val binding: ViewItemSnapBinding

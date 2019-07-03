@@ -17,15 +17,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.haejung.snapmark.R
 import com.haejung.snapmark.databinding.SnapFragmentBinding
 import com.haejung.snapmark.extend.obtainViewModel
 import com.haejung.snapmark.extend.setupSnackbar
-import com.haejung.snapmark.presentation.snap.SnapActionListener.Action
 import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_ID
 import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_TYPE
 import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_TYPE_MARK
@@ -49,47 +46,31 @@ class SnapFragment : Fragment() {
     ): View {
         viewDataBinding = SnapFragmentBinding.inflate(inflater, container, false).apply {
             viewmodel = (activity as AppCompatActivity).obtainViewModel(SnapViewModel::class.java).also {
-                // Bind here
-                it.markLoadedEvent.observe(this@SnapFragment, Observer { event ->
-                    event.getContentIfNotHandled()?.let { mark -> snap_edit_view.mark = mark }
-                })
-                it.snapList.observe(this@SnapFragment, Observer { snapList ->
-                    Timber.i("Observe Snap List: ${snapList.size}")
-                    snapListAdapter.submitList(snapList)
-                })
+                // Bind Snackbar
+                root.setupSnackbar(this@SnapFragment, it.snackbarMessage, Snackbar.LENGTH_SHORT)
             }
         }
         setHasOptionsMenu(true)
         return viewDataBinding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        // Snackbar
-        viewDataBinding.viewmodel?.snackbarMessage?.let {
-            view.setupSnackbar(
-                this@SnapFragment,
-                it, Snackbar.LENGTH_SHORT
-            )
-        }
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        viewDataBinding.lifecycleOwner = this.viewLifecycleOwner
 
-        // Media Scanner
+        setupMediaScanner()
+        parseArguments()
+    }
+
+    private fun setupMediaScanner() {
         mediaScanner =
-            MediaScannerConnection(view.context, object : MediaScannerConnectionClient {
+            MediaScannerConnection(view?.context, object : MediaScannerConnectionClient {
                 override fun onMediaScannerConnected() {
                 }
 
                 override fun onScanCompleted(path: String?, uri: Uri?) {
                 }
             }).apply { connect() }
-    }
-
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-        viewDataBinding.lifecycleOwner = this.viewLifecycleOwner
-
-        setupListAdapter()
-        parseArguments()
     }
 
     private fun parseArguments() {
@@ -120,28 +101,6 @@ class SnapFragment : Fragment() {
                 }
             }
             else -> super.onActivityResult(requestCode, resultCode, data)
-        }
-    }
-
-    private fun setupListAdapter() {
-        snapListAdapter = SnapListAdapter(object : SnapActionListener {
-            override fun onClick(action: Action, snap: Snap) {
-                when (action) {
-                    Action.ACTION_IMAGE_TARGET_SELECT -> {
-                        Timber.i("action select: $snap")
-                        snap_edit_view.snap = snap
-                    }
-                    Action.ACTION_IMAGE_TARGET_DELETE -> {
-                        Timber.i("action delete: $snap")
-                        viewDataBinding.viewmodel?.removeSnap(snap)
-                    }
-                }
-            }
-        })
-        viewDataBinding.viewmodel?.let {
-            viewDataBinding.recyclerView.adapter = snapListAdapter
-            viewDataBinding.recyclerView.layoutManager =
-                LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         }
     }
 
@@ -178,6 +137,7 @@ class SnapFragment : Fragment() {
 
     private fun saveSnapImage() {
         if (checkPermission()) {
+            // TODO: Should be moved role of handling snaps to the viewmodel
             val date = Date(System.currentTimeMillis()).let {
                 SimpleDateFormat.getDateTimeInstance().format(it)
             }

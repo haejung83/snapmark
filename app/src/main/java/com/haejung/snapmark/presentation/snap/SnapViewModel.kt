@@ -24,6 +24,14 @@ class SnapViewModel(
         CompositeDisposable()
     }
 
+    private val _currentSnap = MutableLiveData<Snap>()
+    val currentSnap: LiveData<Snap>
+        get() = _currentSnap
+
+    private val _currentMark = MutableLiveData<Mark>()
+    val currentMark: LiveData<Mark>
+        get() = _currentMark
+
     private val _snapList = MutableLiveData<List<Snap>>().apply { value = emptyList() }
     val snapList: LiveData<List<Snap>>
         get() = _snapList
@@ -32,9 +40,20 @@ class SnapViewModel(
     val snackbarMessage: LiveData<Event<Int>>
         get() = _snackbarMessage
 
-    private val _markLoadedEvent = MutableLiveData<Event<Mark>>()
-    val markLoadedEvent: LiveData<Event<Mark>>
-        get() = _markLoadedEvent
+    val snapActionListener = object : SnapActionListener {
+        override fun onClick(action: SnapActionListener.Action, snap: Snap) {
+            when (action) {
+                SnapActionListener.Action.ACTION_IMAGE_TARGET_SELECT -> {
+                    Timber.i("action select: $snap")
+                    currentSnap(snap)
+                }
+                SnapActionListener.Action.ACTION_IMAGE_TARGET_DELETE -> {
+                    Timber.i("action delete: $snap")
+                    removeSnap(snap)
+                }
+            }
+        }
+    }
 
     override fun onCleared() {
         disposable.clear()
@@ -51,9 +70,8 @@ class SnapViewModel(
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe {
-                // do something here
                 Timber.d("Loaded mark with $markId")
-                _markLoadedEvent.value = Event(it)
+                _currentMark.value = it
             }
             .addTo(disposable)
     }
@@ -80,6 +98,10 @@ class SnapViewModel(
         _snapList.value = mutableListOf(*oldSnapList.toTypedArray()).apply {
             for (snap in snaps) remove(snap)
         }
+    }
+
+    fun currentSnap(snap: Snap) {
+        _currentSnap.value = snap
     }
 
     fun saveSnapImage(completableSnapImage: Completable) {
