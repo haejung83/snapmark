@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+  <data>
+    <variable
+        name="viewmodel"
+        type="com.haejung.snapmark.presentation.snap.SnapViewModel"/>
+  </data>
+
+  <androidx.constraintlayout.widget.ConstraintLayout
+      android:id="@+id/container_layout"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      tools:context=".presentation.snap.SnapFragment">
+
+    <com.haejung.snapmark.presentation.snap.snapedit.SnapEditView
+        android:id="@+id/snap_edit_view"
+        android:layout_width="0dp"
+        android:layout_height="270dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/recycler_view"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:snap="@{viewmodel.currentSnap}"
+        app:mark="@{viewmodel.currentMark}"
+        android:layout_margin="8dp"
+        android:background="@color/colorPrimary"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view"
+        android:layout_width="0dp"
+        android:layout_height="130dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        app:items="@{viewmodel.snapList}"
+        app:viewModel="@{viewmodel}"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:orientation="horizontal"
+        android:background="@color/colorPrimary"/>
+
+  </androidx.constraintlayout.widget.ConstraintLayout>
+
+</layout>

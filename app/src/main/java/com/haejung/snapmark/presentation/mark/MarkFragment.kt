@@ -17,6 +17,7 @@ import com.haejung.snapmark.extend.obtainViewModel
 import com.haejung.snapmark.extend.setupSnackbar
 import com.haejung.snapmark.presentation.Event
 import com.haejung.snapmark.presentation.addmark.AddMarkActivity
+import com.haejung.snapmark.presentation.snap.SnapActivity
 import timber.log.Timber
 
 class MarkFragment private constructor() : Fragment() {
@@ -105,8 +106,9 @@ class MarkFragment private constructor() : Fragment() {
     }
 
     private fun openSnap(markId: Int) {
-        // TODO: Not implemented yet
-        Timber.d("Snap with $markId")
+        startActivity(Intent(context, SnapActivity::class.java).apply {
+            putExtras(SnapActivity.createBundleWithMark(markId))
+        })
     }
 
     private fun openCreatePreset(markId: Int) {

@@ -6,7 +6,7 @@ import com.haejung.snapmark.data.Mark
 
 object MarkListBindings {
 
-    @BindingAdapter("app:items")
+    @BindingAdapter("items")
     @JvmStatic
     fun setItems(recyclerView: RecyclerView, items: List<Mark>) {
         with(recyclerView.adapter as MarkListAdapter) {
