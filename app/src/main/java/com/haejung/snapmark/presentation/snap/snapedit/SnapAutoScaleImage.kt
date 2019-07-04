@@ -9,6 +9,9 @@ class SnapAutoScaleImage(image: Bitmap, window: RectF) : SnapImage(image, window
 
     private val drawRectF = RectF()
 
+    val autoScaledRectF: RectF
+        get() = drawRectF
+
     init {
         drawRectF.set(getCenterFitRectF(image.getBoundRectF(), window))
     }

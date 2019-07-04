@@ -93,8 +93,18 @@ class SnapEditView @JvmOverloads constructor(
     }
 
     private fun extractBitmap(): Bitmap =
-        Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
+        Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).run {
             drawForExtract(Canvas(this))
+            snapAutoScaleImage?.let {
+                val cropRectF = it.autoScaledRectF
+                Bitmap.createBitmap(
+                    this,
+                    cropRectF.left.toInt(),
+                    cropRectF.top.toInt(),
+                    cropRectF.width().toInt(),
+                    cropRectF.height().toInt()
+                )
+            } ?: this
         }
 
     fun save(targetSavePath: String) {
