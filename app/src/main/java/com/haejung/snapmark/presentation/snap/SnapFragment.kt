@@ -10,7 +10,6 @@ import android.media.MediaScannerConnection
 import android.media.MediaScannerConnection.MediaScannerConnectionClient
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.view.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -27,7 +26,6 @@ import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_ID
 import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_TYPE
 import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_TYPE_MARK
 import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_TYPE_PRESET
-import io.reactivex.Completable
 import kotlinx.android.synthetic.main.snap_fragment.*
 import timber.log.Timber
 import java.io.File
@@ -43,13 +41,18 @@ class SnapFragment : Fragment() {
     ): View {
         viewDataBinding = SnapFragmentBinding.inflate(inflater, container, false).apply {
             viewmodel = (activity as AppCompatActivity).obtainViewModel(SnapViewModel::class.java).also {
-                // Bind Snackbar
+                // Observe Snackbar
                 root.setupSnackbar(this@SnapFragment, it.snackbarMessage, Snackbar.LENGTH_SHORT)
-                it.saveRequestEvent.observe(this@SnapFragment, Observer { event ->
-                    event.getContentIfNotHandled()?.let {
-                        saveCurrentSnapImage()
+                // Observe syncSavedImageEvent
+                it.syncSavedImageEvent.observe(this@SnapFragment, Observer { event ->
+                    event.getContentIfNotHandled()?.let { syncImageList ->
+                        syncImageList.forEach { syncImagePath ->
+                            Timber.i("Sync Image: $syncImagePath")
+                            mediaScanner.scanFile(syncImagePath, SNAP_MEDIA_TYPE)
+                        }
                     }
                 })
+                // Observe showFinishDialog
                 it.showFinishDialogEvent.observe(this@SnapFragment, Observer { event ->
                     event.getContentIfNotHandled()?.let {
                         showFinishDialog()
@@ -60,7 +63,6 @@ class SnapFragment : Fragment() {
         setHasOptionsMenu(true)
         return viewDataBinding.root
     }
-
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
@@ -146,24 +148,13 @@ class SnapFragment : Fragment() {
     private fun saveSnapImages() {
         if (checkPermission()) {
             checkAndCreateSaveImageRootDir()
-            viewDataBinding.viewmodel?.saveSnapImages()
+            viewDataBinding.viewmodel?.saveSnapImages(snap_edit_view.extractor)
         }
     }
 
     private fun checkAndCreateSaveImageRootDir() {
-        val saveImageRootDir = File(SAVE_IMAGE_ROOT_PATH)
+        val saveImageRootDir = File(SnapViewModel.SAVE_SNAP_IMAGE_ROOT_PATH)
         if (!saveImageRootDir.exists()) saveImageRootDir.mkdirs()
-    }
-
-    // FIXME: [Saving] Freaky. Make it more elegance.
-    private fun saveCurrentSnapImage() {
-        viewDataBinding.viewmodel?.saveSnapImage(
-            Completable.fromCallable {
-                val saveImagePath = "$SAVE_IMAGE_ROOT_PATH/Snap_${System.currentTimeMillis()}.png"
-                snap_edit_view.save(saveImagePath)
-                mediaScanner.scanFile(saveImagePath, SNAP_MEDIA_TYPE)
-            }
-        )
     }
 
     private fun showFinishDialog() {
@@ -224,14 +215,7 @@ class SnapFragment : Fragment() {
     companion object {
         const val REQUEST_PICK_MULTI_IMAGE = 200
         private const val REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE = 100
-
         private const val SNAP_MEDIA_TYPE = "image/png"
-        private val SAVE_IMAGE_ROOT_PATH: String =
-            Environment.getExternalStorageDirectory().absolutePath +
-                    File.separator +
-                    Environment.DIRECTORY_PICTURES +
-                    File.separator +
-                    "SnapMark"
 
         fun newInstance() = SnapFragment()
     }

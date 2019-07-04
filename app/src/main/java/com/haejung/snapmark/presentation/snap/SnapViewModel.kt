@@ -1,5 +1,7 @@
 package com.haejung.snapmark.presentation.snap
 
+import android.graphics.Bitmap
+import android.os.Environment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -8,14 +10,15 @@ import com.haejung.snapmark.data.Mark
 import com.haejung.snapmark.data.source.repository.MarkPresetRepository
 import com.haejung.snapmark.data.source.repository.MarkRepository
 import com.haejung.snapmark.presentation.Event
-import io.reactivex.Completable
-import io.reactivex.Flowable
+import com.haejung.snapmark.presentation.snap.snapedit.SnapEditExtractor
+import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
-import org.reactivestreams.Subscription
 import timber.log.Timber
+import java.io.File
+import java.io.FileOutputStream
 
 class SnapViewModel(
     private val markRepository: MarkRepository,
@@ -38,9 +41,9 @@ class SnapViewModel(
     val snapList: LiveData<List<Snap>>
         get() = _snapList
 
-    private val _saveRequestEvent = MutableLiveData<Event<Unit>>()
-    val saveRequestEvent: LiveData<Event<Unit>>
-        get() = _saveRequestEvent
+    private val _syncSavedImageEvent = MutableLiveData<Event<List<String>>>()
+    val syncSavedImageEvent: LiveData<Event<List<String>>>
+        get() = _syncSavedImageEvent
 
     private val _showFinishDialogEvent = MutableLiveData<Event<Unit>>()
     val showFinishDialogEvent: LiveData<Event<Unit>>
@@ -64,8 +67,6 @@ class SnapViewModel(
             }
         }
     }
-
-    private var saveSubscription: Subscription? = null
 
     override fun onCleared() {
         disposable.clear()
@@ -116,38 +117,50 @@ class SnapViewModel(
         _currentSnap.value = snap
     }
 
-    // FIXME: [Saving] Freaky. Make it more elegance.
-    fun saveSnapImage(completableSnapImage: Completable) {
-        completableSnapImage
+    fun saveSnapImages(extractor: SnapEditExtractor) {
+        val savedFileList = mutableListOf<String>()
+        Observable.fromIterable(_snapList.value)
             .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe {
-                Timber.i("Save one")
-                // Request next one
-                saveSubscription?.request(1)
+            .doOnSubscribe { extractor.mark = _currentMark.value }
+            .map { snap ->
+                "$SAVE_SNAP_IMAGE_ROOT_PATH/Snap_${System.currentTimeMillis()}.png".apply {
+                    writeBitmapToFile(extractor.extractBitmap(snap), this)
+                }
             }
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                {
+                    savedFileList.add(it)
+                }, {
+                    Timber.e(it)
+                    _snackbarMessage.value = Event(R.string.title_snackbar_msg_save_snap_image_fail)
+                }, {
+                    _syncSavedImageEvent.value = Event(savedFileList)
+                    _showFinishDialogEvent.value = Event(Unit)
+                }
+            )
             .addTo(disposable)
     }
 
-    // FIXME: [Saving] Freaky. Make it more elegance.
-    fun saveSnapImages() {
-        Flowable.fromIterable(_snapList.value)
-            .subscribe({
-                currentSnap(it)
-                _saveRequestEvent.value = Event(Unit)
-            }, {
-                Timber.e(it)
-                saveSubscription = null
-                _snackbarMessage.value = Event(R.string.title_snackbar_msg_save_snap_image_fail)
-            }, {
-                Timber.i("Save done")
-                saveSubscription = null
-                _showFinishDialogEvent.value = Event(Unit)
-            }, {
-                saveSubscription = it
-                it.request(1)
-            })
-            .addTo(disposable)
+    private fun writeBitmapToFile(bitmap: Bitmap, filePath: String) {
+        Timber.i("filePath: $filePath")
+        File(filePath).let {
+            if (it.exists()) it.delete()
+            FileOutputStream(it).apply {
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, this)
+                flush()
+            }.close()
+            bitmap.recycle()
+        }
+    }
+
+    companion object {
+        val SAVE_SNAP_IMAGE_ROOT_PATH: String
+            get() = Environment.getExternalStorageDirectory().absolutePath +
+                    File.separator +
+                    Environment.DIRECTORY_PICTURES +
+                    File.separator +
+                    "SnapMark"
     }
 
 }

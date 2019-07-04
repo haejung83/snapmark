@@ -7,6 +7,7 @@ import android.graphics.RectF
 import com.haejung.snapmark.extend.getBoundLinePointFloatArray
 import com.haejung.snapmark.extend.getBoundRectF
 import com.haejung.snapmark.extend.px
+import com.haejung.snapmark.presentation.snap.SnapMatrix
 import timber.log.Timber
 import kotlin.math.PI
 import kotlin.math.atan2
@@ -14,10 +15,16 @@ import kotlin.math.min
 
 class SnapEditImage(image: Bitmap, window: RectF) : SnapImage(image, window) {
 
-    var drawMatrix = Matrix()
+    private var drawMatrix = Matrix()
         set(value) {
             field = value
             initMatrixWithImage(field.isIdentity)
+        }
+
+    var snapMatrix = SnapMatrix()
+        set(value) {
+            field = value
+            drawMatrix = field.matrix
         }
 
     private val invertedDrawMatrix = Matrix()
@@ -37,8 +44,6 @@ class SnapEditImage(image: Bitmap, window: RectF) : SnapImage(image, window) {
     private val leftBottomCornerBounds = RectF()
     private val rotationBounds = RectF()
     private val centerBounds = RectF()
-
-    private var rotateValue = 0.0
 
     private lateinit var cornerBounds: CornerBounds
 
@@ -147,9 +152,9 @@ class SnapEditImage(image: Bitmap, window: RectF) : SnapImage(image, window) {
                 val degree = radian * RAD2DEG
                 Timber.i("Degree: $degree")
 
-                val diffValue = degree - rotateValue
+                val diffValue = degree - snapMatrix.rotateAngle
                 rotate(diffValue.toFloat(), transformedDrawRectF.centerX(), transformedDrawRectF.centerY())
-                rotateValue = degree
+                snapMatrix.rotateAngle = degree
             }
             CornerBounds.RightBottom -> scale(
                 1F + (2F * (dScaleX / drawRectF.width())),

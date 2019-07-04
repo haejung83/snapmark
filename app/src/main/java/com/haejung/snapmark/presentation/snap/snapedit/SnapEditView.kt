@@ -11,9 +11,6 @@ import android.view.MotionEvent
 import android.view.View
 import com.haejung.snapmark.data.Mark
 import com.haejung.snapmark.presentation.snap.Snap
-import timber.log.Timber
-import java.io.File
-import java.io.FileOutputStream
 
 class SnapEditView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
@@ -27,11 +24,22 @@ class SnapEditView @JvmOverloads constructor(
     private val windowRectF: RectF
         get() = RectF(0F, 0F, width.toFloat(), height.toFloat())
 
+    private val bitmapImageProvider by lazy(LazyThreadSafetyMode.NONE) {
+        object : BitmapImageProvider {
+            override fun getBitmap(uri: Uri): Bitmap =
+                MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+        }
+    }
+
+    val extractor by lazy(LazyThreadSafetyMode.NONE) {
+        SnapEditExtractor(bitmapImageProvider, windowRectF)
+    }
+
     var snap: Snap? = null
         set(value) {
             field = value
             value?.let {
-                snapEditImage?.drawMatrix = it.markMatrix
+                snapEditImage?.snapMatrix = it.snapMatrix
                 snapAutoScaleImage?.dispose()
                 snapAutoScaleImage =
                     SnapAutoScaleImage(
@@ -90,34 +98,6 @@ class SnapEditView @JvmOverloads constructor(
             return true
         }
         return super.onTouchEvent(event)
-    }
-
-    private fun extractBitmap(): Bitmap =
-        Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).run {
-            drawForExtract(Canvas(this))
-            snapAutoScaleImage?.let {
-                val cropRectF = it.autoScaledRectF
-                Bitmap.createBitmap(
-                    this,
-                    cropRectF.left.toInt(),
-                    cropRectF.top.toInt(),
-                    cropRectF.width().toInt(),
-                    cropRectF.height().toInt()
-                )
-            } ?: this
-        }
-
-    fun save(targetSavePath: String) {
-        Timber.i("Save: $targetSavePath")
-        File(targetSavePath).let {
-            if (it.exists()) it.delete()
-            val extractedBitmap = extractBitmap()
-            FileOutputStream(it).apply {
-                extractedBitmap.compress(Bitmap.CompressFormat.PNG, 100, this)
-                flush()
-            }.close()
-            extractedBitmap.recycle()
-        }
     }
 
 }
