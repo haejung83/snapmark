@@ -10,6 +10,7 @@ import com.haejung.snapmark.data.source.repository.MarkRepository
 import com.haejung.snapmark.presentation.addmark.AddMarkViewModel
 import com.haejung.snapmark.presentation.mark.MarkViewModel
 import com.haejung.snapmark.presentation.preset.PresetViewModel
+import com.haejung.snapmark.presentation.snap.SnapViewModel
 import com.haejung.snapmark.presentation.sns.SnsViewModel
 
 class ViewModelFactory private constructor(
@@ -25,6 +26,7 @@ class ViewModelFactory private constructor(
                 isAssignableFrom(PresetViewModel::class.java) -> PresetViewModel(markPresetRepository)
                 isAssignableFrom(SnsViewModel::class.java) -> SnsViewModel()
                 isAssignableFrom(AddMarkViewModel::class.java) -> AddMarkViewModel(markRepository)
+                isAssignableFrom(SnapViewModel::class.java) -> SnapViewModel(markRepository, markPresetRepository)
                 else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
             }
         } as T
