@@ -3,24 +3,19 @@ package com.haejung.snapmark.presentation.mark
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
-import androidx.lifecycle.ViewModel
 import com.haejung.snapmark.R
 import com.haejung.snapmark.data.Mark
 import com.haejung.snapmark.data.source.repository.MarkRepository
 import com.haejung.snapmark.presentation.Event
+import com.haejung.snapmark.presentation.base.DisposableViewModel
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 
 class MarkViewModel(
     private val markRepository: MarkRepository
-) : ViewModel() {
-
-    private val disposable by lazy {
-        CompositeDisposable()
-    }
+) : DisposableViewModel() {
 
     private val _items = MutableLiveData<List<Mark>>().apply { value = emptyList() }
     val items: LiveData<List<Mark>>
@@ -48,11 +43,6 @@ class MarkViewModel(
 
     val empty: LiveData<Boolean> = Transformations.map(_items) {
         it.isEmpty()
-    }
-
-    override fun onCleared() {
-        disposable.clear()
-        super.onCleared()
     }
 
     fun handleActivityResult(requestCode: Int, resultCode: Int) {

@@ -1,7 +1,7 @@
 package com.haejung.snapmark.presentation.sns
 
-import androidx.lifecycle.ViewModel
+import com.haejung.snapmark.presentation.base.DisposableViewModel
 
-class SnsViewModel : ViewModel() {
+class SnsViewModel : DisposableViewModel() {
     // TODO: Implement the ViewModel
 }

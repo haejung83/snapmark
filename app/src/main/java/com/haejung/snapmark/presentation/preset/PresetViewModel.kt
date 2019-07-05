@@ -1,10 +1,10 @@
 package com.haejung.snapmark.presentation.preset
 
-import androidx.lifecycle.ViewModel
 import com.haejung.snapmark.data.source.repository.MarkPresetRepository
+import com.haejung.snapmark.presentation.base.DisposableViewModel
 
 class PresetViewModel(
     private val markPresetRepository: MarkPresetRepository
-) : ViewModel() {
+) : DisposableViewModel() {
     // TODO: Implement the ViewModel
 }
