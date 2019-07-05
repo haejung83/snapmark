@@ -25,25 +25,18 @@ class AddMarkFragment private constructor() : DataBindingFragment<AddMarkFragmen
                 }
             })
         }
-        viewDataBinding.actionListener = object : AddMarkActionListener {
-            override fun onClick(action: AddMarkActionListener.Action?) {
-                when (action) {
-                    AddMarkActionListener.Action.ACTION_SELECT_IMAGE -> viewDataBinding.viewmodel?.openGallery()
-                    AddMarkActionListener.Action.ACTION_SAVE -> viewDataBinding.viewmodel?.saveMark()
-                }
-            }
-        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
             REQUEST_PICK_IMAGE -> {
                 data?.let {
-                    viewDataBinding.viewmodel?.selectedMark?.value =
+                    viewDataBinding.viewmodel?.setSelectedImage(
                         MediaStore.Images.Media.getBitmap(activity?.contentResolver, it.data)
+                    )
                 }
-                viewDataBinding.viewmodel?.handleActivityResult(requestCode, resultCode)
             }
+            else -> viewDataBinding.viewmodel?.handleActivityResult(requestCode, resultCode)
         }
     }
 

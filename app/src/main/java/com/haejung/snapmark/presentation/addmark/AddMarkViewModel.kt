@@ -18,8 +18,9 @@ class AddMarkViewModel(
     private val markRepository: MarkRepository
 ) : DisposableViewModel() {
 
-    // Bi-Directional Binding
-    val selectedMark = MutableLiveData<Bitmap>()
+    private val _selectedMark = MutableLiveData<Bitmap>()
+    val selectedMark: LiveData<Bitmap>
+        get() = _selectedMark
 
     private val _saveMarkEvent = MutableLiveData<Event<Unit>>()
     val saveMarkEvent: LiveData<Event<Unit>>
@@ -29,8 +30,25 @@ class AddMarkViewModel(
     val openGalleryEvent: LiveData<Event<Unit>>
         get() = _openGalleryEvent
 
+    val addMarkActionListener = object : AddMarkActionListener {
+        override fun onClick(action: AddMarkActionListener.Action?) {
+            when (action) {
+                AddMarkActionListener.Action.ACTION_SELECT_IMAGE -> openGallery()
+                AddMarkActionListener.Action.ACTION_SAVE -> saveMark()
+            }
+        }
+    }
+
     fun handleActivityResult(requestCode: Int, resultCode: Int) {
         Timber.d("handleActivityResult: $requestCode, $resultCode")
+    }
+
+    fun openGallery() {
+        _openGalleryEvent.value = Event(Unit)
+    }
+
+    fun setSelectedImage(image: Bitmap) {
+        _selectedMark.value = image
     }
 
     fun saveMark() {
@@ -65,10 +83,6 @@ class AddMarkViewModel(
                 Timber.e("Couldn't resize bitmap: $it")
             })
             .addTo(disposable)
-    }
-
-    fun openGallery() {
-        _openGalleryEvent.value = Event(Unit)
     }
 
     companion object {
