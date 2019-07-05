@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.haejung.snapmark.R
@@ -22,8 +21,6 @@ class MarkFragment private constructor() : DataBindingFragment<MarkFragmentBindi
 
     override val layoutResId: Int
         get() = R.layout.mark_fragment
-
-    private lateinit var markListAdapter: MarkListAdapter
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
@@ -51,7 +48,6 @@ class MarkFragment private constructor() : DataBindingFragment<MarkFragmentBindi
         }
 
         setupFab()
-        setupListAdapter()
         loadMarks()
     }
 
@@ -66,14 +62,6 @@ class MarkFragment private constructor() : DataBindingFragment<MarkFragmentBindi
             it.setOnClickListener {
                 viewDataBinding.viewmodel?.addMark()
             }
-        }
-    }
-
-    private fun setupListAdapter() {
-        viewDataBinding.viewmodel?.let {
-            markListAdapter = MarkListAdapter(it)
-            viewDataBinding.recyclerView.adapter = markListAdapter
-            viewDataBinding.recyclerView.layoutManager = LinearLayoutManager(context)
         }
     }
 
