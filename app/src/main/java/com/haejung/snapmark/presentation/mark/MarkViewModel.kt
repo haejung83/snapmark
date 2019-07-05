@@ -1,5 +1,6 @@
 package com.haejung.snapmark.presentation.mark
 
+import android.view.View
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
@@ -33,6 +34,10 @@ class MarkViewModel(
     val createPresetEvent: LiveData<Event<Int>>
         get() = _createPresetEvent
 
+    private val _showMarkPopupMenuEvent = MutableLiveData<Event<Pair<View, Mark>>>()
+    val showMarkPopupMenuEvent: LiveData<Event<Pair<View, Mark>>>
+        get() = _showMarkPopupMenuEvent
+
     private val _dataLoading = MutableLiveData<Boolean>()
     val dataLoading: LiveData<Boolean>
         get() = _dataLoading
@@ -45,6 +50,17 @@ class MarkViewModel(
         it.isEmpty()
     }
 
+    val markActionListener = object : MarkActionListener {
+        override fun onClick(action: MarkActionListener.Action, mark: Mark, view: View?) {
+            when (action) {
+                MarkActionListener.Action.ACTION_SNAP -> snap(mark)
+                MarkActionListener.Action.ACTION_OPEN_MENU -> view?.let {
+                    _showMarkPopupMenuEvent.value = Event(it to mark)
+                }
+            }
+        }
+    }
+
     fun handleActivityResult(requestCode: Int, resultCode: Int) {
         Timber.d("handleActivityResult: $requestCode, $resultCode")
     }
@@ -55,12 +71,14 @@ class MarkViewModel(
 
     private fun loadMarks() {
         Timber.d("loadMarks")
+        _dataLoading.value = true
         markRepository.getMarks()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe {
                 Timber.d("Mark Loaded: ${it.size}")
                 _items.value = it
+                _dataLoading.value = false
             }.addTo(disposable)
     }
 
