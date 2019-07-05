@@ -46,7 +46,6 @@ class MarkFragment private constructor() : DataBindingFragment<MarkFragmentBindi
             // Snackbar
             view?.setupSnackbar(this@MarkFragment, it.snackbarMessage, Snackbar.LENGTH_SHORT)
         }
-
         setupFab()
         loadMarks()
     }
