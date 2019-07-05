@@ -3,25 +3,20 @@ package com.haejung.snapmark.presentation.addmark
 import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import com.haejung.snapmark.data.Mark
 import com.haejung.snapmark.data.source.repository.MarkRepository
 import com.haejung.snapmark.extend.createScaledBitmapWithAspectRatio
 import com.haejung.snapmark.presentation.Event
+import com.haejung.snapmark.presentation.base.DisposableViewModel
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 
 class AddMarkViewModel(
     private val markRepository: MarkRepository
-) : ViewModel() {
-
-    private val disposable by lazy {
-        CompositeDisposable()
-    }
+) : DisposableViewModel() {
 
     // Bi-Directional Binding
     val selectedMark = MutableLiveData<Bitmap>()
@@ -33,11 +28,6 @@ class AddMarkViewModel(
     private val _openGalleryEvent = MutableLiveData<Event<Unit>>()
     val openGalleryEvent: LiveData<Event<Unit>>
         get() = _openGalleryEvent
-
-    override fun onCleared() {
-        disposable.clear()
-        super.onCleared()
-    }
 
     fun handleActivityResult(requestCode: Int, resultCode: Int) {
         Timber.d("handleActivityResult: $requestCode, $resultCode")

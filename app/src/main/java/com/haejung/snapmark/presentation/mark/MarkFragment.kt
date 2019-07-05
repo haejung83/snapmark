@@ -2,11 +2,8 @@ package com.haejung.snapmark.presentation.mark
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -17,59 +14,42 @@ import com.haejung.snapmark.extend.obtainViewModel
 import com.haejung.snapmark.extend.setupSnackbar
 import com.haejung.snapmark.presentation.Event
 import com.haejung.snapmark.presentation.addmark.AddMarkActivity
+import com.haejung.snapmark.presentation.base.DataBindingFragment
 import com.haejung.snapmark.presentation.snap.SnapActivity
 import timber.log.Timber
 
-class MarkFragment private constructor() : Fragment() {
+class MarkFragment private constructor() : DataBindingFragment<MarkFragmentBinding>() {
 
-    private lateinit var viewDataBinding: MarkFragmentBinding
+    override val layoutResId: Int
+        get() = R.layout.mark_fragment
+
     private lateinit var markListAdapter: MarkListAdapter
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        viewDataBinding = MarkFragmentBinding.inflate(inflater, container, false).apply {
-            viewmodel = (activity as AppCompatActivity).obtainViewModel(MarkViewModel::class.java).also {
-                // New Mark
-                it.newMarkEvent.observe(this@MarkFragment, Observer<Event<Unit>> { event ->
-                    event.getContentIfNotHandled()?.let {
-                        openNewMark()
-                    }
-                })
-                // Snap
-                it.snapEvent.observe(this@MarkFragment, Observer<Event<Int>> { event ->
-                    event.getContentIfNotHandled()?.let { markId ->
-                        openSnap(markId)
-                    }
-                })
-                // Create Preset
-                it.createPresetEvent.observe(this@MarkFragment, Observer<Event<Int>> { event ->
-                    event.getContentIfNotHandled()?.let { markId ->
-                        openCreatePreset(markId)
-                    }
-                })
-            }
-        }
-
-        return viewDataBinding.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        // Snackbar
-        viewDataBinding.viewmodel?.snackbarMessage?.let {
-            view.setupSnackbar(
-                this@MarkFragment,
-                it, Snackbar.LENGTH_SHORT
-            )
-        }
-    }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewDataBinding.lifecycleOwner = this.viewLifecycleOwner
+        viewDataBinding.viewmodel = (activity as AppCompatActivity).obtainViewModel(MarkViewModel::class.java).also {
+            // New Mark
+            it.newMarkEvent.observe(this@MarkFragment, Observer<Event<Unit>> { event ->
+                event.getContentIfNotHandled()?.let {
+                    openNewMark()
+                }
+            })
+            // Snap
+            it.snapEvent.observe(this@MarkFragment, Observer<Event<Int>> { event ->
+                event.getContentIfNotHandled()?.let { markId ->
+                    openSnap(markId)
+                }
+            })
+            // Create Preset
+            it.createPresetEvent.observe(this@MarkFragment, Observer<Event<Int>> { event ->
+                event.getContentIfNotHandled()?.let { markId ->
+                    openCreatePreset(markId)
+                }
+            })
+            // Snackbar
+            view?.setupSnackbar(this@MarkFragment, it.snackbarMessage, Snackbar.LENGTH_SHORT)
+        }
+
         setupFab()
         setupListAdapter()
         loadMarks()
