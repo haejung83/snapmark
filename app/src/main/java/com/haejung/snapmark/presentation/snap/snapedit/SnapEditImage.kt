@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.RectF
+import com.haejung.snapmark.extend.dp
 import com.haejung.snapmark.extend.getBoundLinePointFloatArray
 import com.haejung.snapmark.extend.getBoundRectF
 import com.haejung.snapmark.extend.px
@@ -26,6 +27,9 @@ class SnapEditImage(image: Bitmap, window: RectF) : SnapImage(image, window) {
             field = value
             drawMatrix = field.matrix
         }
+
+    private val scaleCheckMatrix = Matrix()
+    private val scaleCheckRect = RectF()
 
     private val invertedDrawMatrix = Matrix()
 
@@ -101,7 +105,14 @@ class SnapEditImage(image: Bitmap, window: RectF) : SnapImage(image, window) {
 
     private fun scale(dx: Float, dy: Float, px: Float, py: Float) {
         val normalized = (dx + dy) / 2F
-        drawMatrix.postScale(normalized, normalized, px, py)
+        scaleCheckMatrix.let {
+            it.set(drawMatrix)
+            it.postScale(normalized, normalized, px, py)
+            it.mapRect(scaleCheckRect, drawRectF)
+            if (scaleCheckRect.width().toInt().dp >= MIN_SCALE_DP_SIZE || scaleCheckRect.height().toInt().dp >= MIN_SCALE_DP_SIZE) {
+                drawMatrix.set(it)
+            }
+        }
     }
 
     private fun rotate(degree: Float, px: Float, py: Float) {
@@ -280,9 +291,10 @@ class SnapEditImage(image: Bitmap, window: RectF) : SnapImage(image, window) {
     }
 
     companion object {
+        private const val MIN_SCALE_DP_SIZE = 40
         private const val PI2: Double = PI * 2.0
         private const val RAD2DEG: Double = 180.0 / PI
-        private val INBOUND: Float = 10.px.toFloat()
+        private val INBOUND: Float = 12.px.toFloat()
     }
 
 }
