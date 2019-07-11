@@ -70,11 +70,6 @@ class SnapEditView @JvmOverloads constructor(
         }
     }
 
-    private fun drawForExtract(canvas: Canvas) {
-        snapAutoScaleImage?.onDraw(canvas)
-        snapEditImage?.onDraw(canvas)
-    }
-
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         event?.let {
             when (event.action) {

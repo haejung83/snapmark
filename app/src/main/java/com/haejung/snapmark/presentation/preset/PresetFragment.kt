@@ -1,33 +1,44 @@
 package com.haejung.snapmark.presentation.preset
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.Fragment
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.haejung.snapmark.R
+import com.haejung.snapmark.databinding.PresetFragmentBinding
 import com.haejung.snapmark.extend.obtainViewModel
+import com.haejung.snapmark.presentation.base.DataBindingNavigationFragment
+import timber.log.Timber
 
-class PresetFragment : Fragment() {
+class PresetFragment private constructor() : DataBindingNavigationFragment<PresetFragmentBinding>() {
 
-    companion object {
-        fun newInstance() = PresetFragment()
-    }
-
-    private lateinit var viewModel: PresetViewModel
-
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.preset_fragment, container, false)
-    }
+    override val layoutResId: Int
+        get() = R.layout.preset_fragment
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewModel = (activity as AppCompatActivity).obtainViewModel(PresetViewModel::class.java)
-        // TODO: Use the ViewModel
+        viewDataBinding.viewmodel = (activity as AppCompatActivity).obtainViewModel(PresetViewModel::class.java).apply {
+            // Binding here
+        }
+    }
+
+    override fun onNavigationSelected() {
+        takeFabOwnership()
+    }
+
+    private fun takeFabOwnership() {
+        Timber.i("takeFabOwnership")
+        activity?.findViewById<FloatingActionButton>(R.id.fab_add_mark)?.let {
+            it.visibility = View.VISIBLE
+            it.setImageResource(R.drawable.ic_add_black_24dp)
+            it.setOnClickListener {
+                Timber.i("Clicked the Fab")
+            }
+        }
+    }
+
+    companion object {
+        fun newInstance() = PresetFragment()
     }
 
 }

@@ -18,11 +18,11 @@ import com.haejung.snapmark.extend.obtainViewModel
 import com.haejung.snapmark.extend.setupSnackbar
 import com.haejung.snapmark.presentation.Event
 import com.haejung.snapmark.presentation.addmark.AddMarkActivity
-import com.haejung.snapmark.presentation.base.DataBindingFragment
+import com.haejung.snapmark.presentation.base.DataBindingNavigationFragment
 import com.haejung.snapmark.presentation.snap.SnapActivity
 import timber.log.Timber
 
-class MarkFragment private constructor() : DataBindingFragment<MarkFragmentBinding>() {
+class MarkFragment private constructor() : DataBindingNavigationFragment<MarkFragmentBinding>() {
 
     override val layoutResId: Int
         get() = R.layout.mark_fragment
@@ -49,7 +49,6 @@ class MarkFragment private constructor() : DataBindingFragment<MarkFragmentBindi
             // Snackbar
             view?.setupSnackbar(this@MarkFragment, it.snackbarMessage, Snackbar.LENGTH_SHORT)
         }
-        setupFab()
         loadMarks()
     }
 
@@ -57,7 +56,13 @@ class MarkFragment private constructor() : DataBindingFragment<MarkFragmentBindi
         viewDataBinding.viewmodel?.handleActivityResult(requestCode, resultCode)
     }
 
-    private fun setupFab() {
+    override fun onNavigationSelected() {
+        isAdded
+        takeFabOwnership()
+    }
+
+    private fun takeFabOwnership() {
+        Timber.i("takeFabOwnership")
         activity?.findViewById<FloatingActionButton>(R.id.fab_add_mark)?.let {
             it.visibility = View.VISIBLE
             it.setImageResource(R.drawable.ic_add_black_24dp)

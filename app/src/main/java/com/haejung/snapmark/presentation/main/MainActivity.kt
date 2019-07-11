@@ -11,6 +11,7 @@ import com.haejung.snapmark.extend.addFragmentToActivity
 import com.haejung.snapmark.extend.hideFragmentInActivity
 import com.haejung.snapmark.extend.setupActionBar
 import com.haejung.snapmark.extend.showFragmentInActivity
+import com.haejung.snapmark.presentation.base.DataBindingNavigationFragment
 import com.haejung.snapmark.presentation.mark.MarkFragment
 import com.haejung.snapmark.presentation.preset.PresetFragment
 import com.haejung.snapmark.presentation.sns.SnsFragment
@@ -94,6 +95,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         activatedFragment = targetFragment
+        (activatedFragment as? DataBindingNavigationFragment<*>)?.navigationSelected()
 
         supportActionBar?.let {
             it.title = actionBarTitle
