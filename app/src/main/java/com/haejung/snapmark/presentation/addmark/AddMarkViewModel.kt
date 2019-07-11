@@ -3,28 +3,24 @@ package com.haejung.snapmark.presentation.addmark
 import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import com.haejung.snapmark.data.Mark
 import com.haejung.snapmark.data.source.repository.MarkRepository
 import com.haejung.snapmark.extend.createScaledBitmapWithAspectRatio
 import com.haejung.snapmark.presentation.Event
+import com.haejung.snapmark.presentation.base.DisposableViewModel
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
 
 class AddMarkViewModel(
     private val markRepository: MarkRepository
-) : ViewModel() {
+) : DisposableViewModel() {
 
-    private val disposable by lazy {
-        CompositeDisposable()
-    }
-
-    // Bi-Directional Binding
-    val selectedMark = MutableLiveData<Bitmap>()
+    private val _selectedMark = MutableLiveData<Bitmap>()
+    val selectedMark: LiveData<Bitmap>
+        get() = _selectedMark
 
     private val _saveMarkEvent = MutableLiveData<Event<Unit>>()
     val saveMarkEvent: LiveData<Event<Unit>>
@@ -34,13 +30,25 @@ class AddMarkViewModel(
     val openGalleryEvent: LiveData<Event<Unit>>
         get() = _openGalleryEvent
 
-    override fun onCleared() {
-        disposable.clear()
-        super.onCleared()
+    val addMarkActionListener = object : AddMarkActionListener {
+        override fun onClick(action: AddMarkActionListener.Action?) {
+            when (action) {
+                AddMarkActionListener.Action.ACTION_SELECT_IMAGE -> openGallery()
+                AddMarkActionListener.Action.ACTION_SAVE -> saveMark()
+            }
+        }
     }
 
     fun handleActivityResult(requestCode: Int, resultCode: Int) {
         Timber.d("handleActivityResult: $requestCode, $resultCode")
+    }
+
+    fun openGallery() {
+        _openGalleryEvent.value = Event(Unit)
+    }
+
+    fun setSelectedImage(image: Bitmap) {
+        _selectedMark.value = image
     }
 
     fun saveMark() {
@@ -75,10 +83,6 @@ class AddMarkViewModel(
                 Timber.e("Couldn't resize bitmap: $it")
             })
             .addTo(disposable)
-    }
-
-    fun openGallery() {
-        _openGalleryEvent.value = Event(Unit)
     }
 
     companion object {

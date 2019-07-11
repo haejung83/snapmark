@@ -10,11 +10,12 @@ import android.media.MediaScannerConnection
 import android.media.MediaScannerConnection.MediaScannerConnectionClient
 import android.net.Uri
 import android.os.Bundle
-import android.view.*
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -22,6 +23,7 @@ import com.haejung.snapmark.R
 import com.haejung.snapmark.databinding.SnapFragmentBinding
 import com.haejung.snapmark.extend.obtainViewModel
 import com.haejung.snapmark.extend.setupSnackbar
+import com.haejung.snapmark.presentation.base.DataBindingFragment
 import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_ID
 import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_TYPE
 import com.haejung.snapmark.presentation.snap.SnapActivity.Companion.EXTRA_TYPE_MARK
@@ -30,44 +32,35 @@ import kotlinx.android.synthetic.main.snap_fragment.*
 import timber.log.Timber
 import java.io.File
 
-class SnapFragment : Fragment() {
+class SnapFragment private constructor() : DataBindingFragment<SnapFragmentBinding>() {
+
+    override val layoutResId: Int
+        get() = R.layout.snap_fragment
 
     private lateinit var mediaScanner: MediaScannerConnection
-    private lateinit var viewDataBinding: SnapFragmentBinding
-
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        viewDataBinding = SnapFragmentBinding.inflate(inflater, container, false).apply {
-            viewmodel = (activity as AppCompatActivity).obtainViewModel(SnapViewModel::class.java).also {
-                // Observe Snackbar
-                root.setupSnackbar(this@SnapFragment, it.snackbarMessage, Snackbar.LENGTH_SHORT)
-                // Observe syncSavedImageEvent
-                it.syncSavedImageEvent.observe(this@SnapFragment, Observer { event ->
-                    event.getContentIfNotHandled()?.let { syncImageList ->
-                        syncImageList.forEach { syncImagePath ->
-                            Timber.i("Sync Image: $syncImagePath")
-                            mediaScanner.scanFile(syncImagePath, SNAP_MEDIA_TYPE)
-                        }
-                    }
-                })
-                // Observe showFinishDialog
-                it.showFinishDialogEvent.observe(this@SnapFragment, Observer { event ->
-                    event.getContentIfNotHandled()?.let {
-                        showFinishDialog()
-                    }
-                })
-            }
-        }
-        setHasOptionsMenu(true)
-        return viewDataBinding.root
-    }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewDataBinding.lifecycleOwner = this.viewLifecycleOwner
-
+        viewDataBinding.viewmodel = (activity as AppCompatActivity).obtainViewModel(SnapViewModel::class.java).also {
+            // Observe syncSavedImageEvent
+            it.syncSavedImageEvent.observe(this@SnapFragment, Observer { event ->
+                event.getContentIfNotHandled()?.let { syncImageList ->
+                    syncImageList.forEach { syncImagePath ->
+                        Timber.i("Sync Image: $syncImagePath")
+                        mediaScanner.scanFile(syncImagePath, SNAP_MEDIA_TYPE)
+                    }
+                }
+            })
+            // Observe showFinishDialog
+            it.showFinishDialogEvent.observe(this@SnapFragment, Observer { event ->
+                event.getContentIfNotHandled()?.let {
+                    showFinishDialog()
+                }
+            })
+            // Observe Snackbar
+            view?.setupSnackbar(this@SnapFragment, it.snackbarMessage, Snackbar.LENGTH_SHORT)
+        }
+        setHasOptionsMenu(true)
         setupMediaScanner()
         parseArguments()
     }

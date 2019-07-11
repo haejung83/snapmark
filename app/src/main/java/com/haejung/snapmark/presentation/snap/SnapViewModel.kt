@@ -4,16 +4,15 @@ import android.graphics.Bitmap
 import android.os.Environment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import com.haejung.snapmark.R
 import com.haejung.snapmark.data.Mark
 import com.haejung.snapmark.data.source.repository.MarkPresetRepository
 import com.haejung.snapmark.data.source.repository.MarkRepository
 import com.haejung.snapmark.presentation.Event
+import com.haejung.snapmark.presentation.base.DisposableViewModel
 import com.haejung.snapmark.presentation.snap.snapedit.SnapEditExtractor
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.rxkotlin.addTo
 import io.reactivex.schedulers.Schedulers
 import timber.log.Timber
@@ -23,11 +22,7 @@ import java.io.FileOutputStream
 class SnapViewModel(
     private val markRepository: MarkRepository,
     private val markPresetRepository: MarkPresetRepository
-) : ViewModel() {
-
-    private val disposable by lazy {
-        CompositeDisposable()
-    }
+) : DisposableViewModel() {
 
     private val _currentSnap = MutableLiveData<Snap>()
     val currentSnap: LiveData<Snap>
@@ -66,11 +61,6 @@ class SnapViewModel(
                 }
             }
         }
-    }
-
-    override fun onCleared() {
-        disposable.clear()
-        super.onCleared()
     }
 
     fun handleActivityResult(requestCode: Int, resultCode: Int) {

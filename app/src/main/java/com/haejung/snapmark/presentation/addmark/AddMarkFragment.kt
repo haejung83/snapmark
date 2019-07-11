@@ -3,58 +3,40 @@ package com.haejung.snapmark.presentation.addmark
 import android.content.Intent
 import android.os.Bundle
 import android.provider.MediaStore
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import com.haejung.snapmark.R
 import com.haejung.snapmark.databinding.AddMarkFragmentBinding
 import com.haejung.snapmark.extend.obtainViewModel
 import com.haejung.snapmark.presentation.Event
+import com.haejung.snapmark.presentation.base.DataBindingFragment
 
-class AddMarkFragment : Fragment() {
+class AddMarkFragment private constructor() : DataBindingFragment<AddMarkFragmentBinding>() {
 
-    private lateinit var viewDataBinding: AddMarkFragmentBinding
-
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        viewDataBinding = AddMarkFragmentBinding.inflate(inflater, container, false).apply {
-            viewmodel = (activity as AppCompatActivity).obtainViewModel(AddMarkViewModel::class.java).also {
-                it.openGalleryEvent.observe(this@AddMarkFragment, Observer<Event<Unit>> { event ->
-                    event.getContentIfNotHandled()?.let {
-                        openGallery()
-                    }
-                })
-            }
-            actionListener = object : AddMarkActionListener {
-                override fun onClick(action: AddMarkActionListener.Action?) {
-                    when (action) {
-                        AddMarkActionListener.Action.ACTION_SELECT_IMAGE -> viewDataBinding.viewmodel?.openGallery()
-                        AddMarkActionListener.Action.ACTION_SAVE -> viewDataBinding.viewmodel?.saveMark()
-                    }
-                }
-            }
-        }
-        return viewDataBinding.root
-    }
+    override val layoutResId: Int
+        get() = R.layout.add_mark_fragment
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewDataBinding.lifecycleOwner = this.viewLifecycleOwner
+        viewDataBinding.viewmodel = (activity as AppCompatActivity).obtainViewModel(AddMarkViewModel::class.java).also {
+            it.openGalleryEvent.observe(this@AddMarkFragment, Observer<Event<Unit>> { event ->
+                event.getContentIfNotHandled()?.let {
+                    openGallery()
+                }
+            })
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
             REQUEST_PICK_IMAGE -> {
                 data?.let {
-                    viewDataBinding.viewmodel?.selectedMark?.value =
+                    viewDataBinding.viewmodel?.setSelectedImage(
                         MediaStore.Images.Media.getBitmap(activity?.contentResolver, it.data)
+                    )
                 }
-                viewDataBinding.viewmodel?.handleActivityResult(requestCode, resultCode)
             }
+            else -> viewDataBinding.viewmodel?.handleActivityResult(requestCode, resultCode)
         }
     }
 
